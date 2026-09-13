@@ -1,7 +1,341 @@
 <!DOCTYPE html>
-<html>
-<head><title>Etsy SEO Tools</title></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Etsy SEO Tools — Free Keyword, Tag & Listing Optimization Tools</title>
+  <meta name="description" content="Free, 100% client-side SEO tools built for Etsy sellers. Generate high-ranking 13-tag lists, analyze keywords, and optimize listings without paid subscriptions.">
+  <link rel="canonical" href="https://etsy-seo-tools.vercel.app/">
+  <meta name="google-site-verification" content="8D7sHnBNSGZZ83mSw_xi4TLnlDrAz94ciyaQ8KNpmW4" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-<h1>Etsy SEO Tools — Coming Soon</h1>
+
+  <!-- Sticky Header -->
+  <header class="site-header">
+    <div class="site-container">
+      <div class="header-inner">
+        <a href="index.html" class="brand-logo" aria-label="Etsy SEO Tools Home">
+          <div class="brand-icon">E</div>
+          <span class="brand-text">Etsy SEO <span>Tools</span></span>
+        </a>
+
+        <nav aria-label="Primary Navigation">
+          <ul class="nav-desktop">
+            <li><a href="index.html" class="nav-link active">Home</a></li>
+            <li><a href="tag-generator/index.html" class="nav-link">Tag Generator</a></li>
+            <li><a href="about/index.html" class="nav-link">About</a></li>
+            <li><a href="contact/index.html" class="nav-link">Contact</a></li>
+            <li><a href="tag-generator/index.html" class="nav-btn">Start Free</a></li>
+          </ul>
+        </nav>
+
+        <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Dropdown -->
+    <div class="mobile-nav-panel" id="mobileNavPanel">
+      <ul class="mobile-nav-list">
+        <li><a href="index.html" class="mobile-nav-link active">Home</a></li>
+        <li><a href="tag-generator/index.html" class="mobile-nav-link">Tag Generator</a></li>
+        <li><a href="about/index.html" class="mobile-nav-link">About</a></li>
+        <li><a href="contact/index.html" class="mobile-nav-link">Contact</a></li>
+        <li><a href="privacy-policy/index.html" class="mobile-nav-link">Privacy Policy</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="site-container">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          100% Free Artisan Toolkit &bull; Zero API Fees
+        </div>
+        <h1 class="hero-title">
+          Free SEO Tools for <span>Etsy Sellers</span>
+        </h1>
+        <p class="hero-subtitle">
+          Optimize your handmade, vintage, and digital listings for Etsy's search algorithm. Uncover buyer-intent keywords, maximize your 13 tag slots, and drive consistent organic sales without paid subscription fees.
+        </p>
+        <div class="hero-actions">
+          <a href="tag-generator/index.html" class="btn btn-primary">
+            Open Tag Generator
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </a>
+          <a href="#tools-suite" class="btn btn-secondary">Explore All Tools</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tools Grid Section -->
+    <section class="section" id="tools-suite">
+      <div class="site-container">
+        <div class="section-header">
+          <span class="section-tag">Curated Tool Suite</span>
+          <h2 class="section-title">Everything You Need to Rank on Etsy</h2>
+          <p class="section-desc">
+            Designed specifically for independent creators, crafters, and boutique shop owners who want practical optimization without unnecessary complexity.
+          </p>
+        </div>
+
+        <div class="tools-grid">
+
+          <!-- Tool 1: Tag Generator (Live) -->
+          <div class="tool-card active">
+            <div>
+              <div class="tool-card-header">
+                <div class="tool-card-icon">🏷️</div>
+                <span class="tool-badge badge-live">Available Now</span>
+              </div>
+              <h3 class="tool-card-title">
+                <a href="tag-generator/index.html">Tag &amp; Keyword Generator</a>
+              </h3>
+              <p class="tool-card-desc">
+                Paste your product title and description to instantly generate up to 13 high-intent, 20-character-compliant Etsy tags. Features individual chip editing and 1-click comma-separated copying.
+              </p>
+            </div>
+            <div class="tool-card-footer">
+              <a href="tag-generator/index.html" class="btn btn-sm btn-outline-terracotta">
+                Launch Tool &rarr;
+              </a>
+              <span style="font-size: 0.8rem; color: var(--color-sage); font-weight: 600;">100% Client-Side</span>
+            </div>
+          </div>
+
+          <!-- Tool 2: Title Checker (Coming Soon) -->
+          <div class="tool-card coming-soon">
+            <div>
+              <div class="tool-card-header">
+                <div class="tool-card-icon">📝</div>
+                <span class="tool-badge badge-soon">Coming Soon</span>
+              </div>
+              <h3 class="tool-card-title">Etsy Title Checker</h3>
+              <p class="tool-card-desc">
+                Audit your listing titles against Etsy's character limits and readability standards. Analyzes front-loaded primary keywords, eliminates duplicate spam words, and optimizes desktop and mobile search snippets.
+              </p>
+            </div>
+            <div class="tool-card-footer">
+              <span class="tool-card-link">In Development</span>
+              <span style="font-size: 0.8rem; color: var(--text-light);">Roadmap Q2</span>
+            </div>
+          </div>
+
+          <!-- Tool 3: Description Analyzer (Coming Soon) -->
+          <div class="tool-card coming-soon">
+            <div>
+              <div class="tool-card-header">
+                <div class="tool-card-icon">🔍</div>
+                <span class="tool-badge badge-soon">Coming Soon</span>
+              </div>
+              <h3 class="tool-card-title">Description Analyzer</h3>
+              <p class="tool-card-desc">
+                Scan your listing description to ensure the first 160 characters provide compelling context for external search engines (Google Search) while checking for structured dimensions, materials, and care instructions.
+              </p>
+            </div>
+            <div class="tool-card-footer">
+              <span class="tool-card-link">In Development</span>
+              <span style="font-size: 0.8rem; color: var(--text-light);">Roadmap Q2</span>
+            </div>
+          </div>
+
+          <!-- Tool 4: SEO Score Checker (Coming Soon) -->
+          <div class="tool-card coming-soon">
+            <div>
+              <div class="tool-card-header">
+                <div class="tool-card-icon">📊</div>
+                <span class="tool-badge badge-soon">Coming Soon</span>
+              </div>
+              <h3 class="tool-card-title">SEO Listing Scorecard</h3>
+              <p class="tool-card-desc">
+                Get an objective 0–100 optimization rating on your complete listing. Evaluates title-to-tag keyword synergy, long-tail query diversity, image alt-tag preparedness, and categorization completeness.
+              </p>
+            </div>
+            <div class="tool-card-footer">
+              <span class="tool-card-link">In Development</span>
+              <span style="font-size: 0.8rem; color: var(--text-light);">Roadmap Q3</span>
+            </div>
+          </div>
+
+          <!-- Tool 5: Category & Attribute Finder (Coming Soon) -->
+          <div class="tool-card coming-soon">
+            <div>
+              <div class="tool-card-header">
+                <div class="tool-card-icon">📂</div>
+                <span class="tool-badge badge-soon">Coming Soon</span>
+              </div>
+              <h3 class="tool-card-title">Category &amp; Attribute Finder</h3>
+              <p class="tool-card-desc">
+                Discover the deepest relevant Etsy taxonomy categories and listing attributes so you avoid wasting valuable tag slots on terms Etsy already indexes through standard item specifics.
+              </p>
+            </div>
+            <div class="tool-card-footer">
+              <span class="tool-card-link">In Development</span>
+              <span style="font-size: 0.8rem; color: var(--text-light);">Roadmap Q3</span>
+            </div>
+          </div>
+
+          <!-- Tool 6: Tag Diversity Audit (Coming Soon) -->
+          <div class="tool-card coming-soon">
+            <div>
+              <div class="tool-card-header">
+                <div class="tool-card-icon">🎯</div>
+                <span class="tool-badge badge-soon">Coming Soon</span>
+              </div>
+              <h3 class="tool-card-title">Shop Tag Cannibalization Check</h3>
+              <p class="tool-card-desc">
+                Paste tags across multiple shop listings to detect internal keyword competition. Ensure your products target distinct search customer personas rather than competing against your own catalog.
+              </p>
+            </div>
+            <div class="tool-card-footer">
+              <span class="tool-card-link">In Development</span>
+              <span style="font-size: 0.8rem; color: var(--text-light);">Roadmap Q3</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Use These Tools Section (Benefits) -->
+    <section class="benefits-section">
+      <div class="site-container">
+        <div class="section-header">
+          <span class="section-tag">Smarter Etsy Growth</span>
+          <h2 class="section-title">Why Optimize with Etsy SEO Tools?</h2>
+          <p class="section-desc">
+            Organic discovery is the single most sustainable sales channel on Etsy. Here is how specialized optimization gives your handmade or vintage shop a lasting edge.
+          </p>
+        </div>
+
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <div class="benefit-num">01</div>
+            <h3 class="benefit-title">Align with Etsy's Matching Algorithm</h3>
+            <p class="benefit-desc">
+              Etsy uses query matching to evaluate how closely buyer searches align with your titles, tags, attributes, and categories. When your 13 tags contain natural 2-to-3 word long-tail phrases, your listing qualifies for far more high-intent buyer searches.
+            </p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-num">02</div>
+            <h3 class="benefit-title">Capture Ready-to-Buy Long-Tail Shoppers</h3>
+            <p class="benefit-desc">
+              Broad searches like "necklace" or "mug" suffer from fierce competition and low conversion rates. Specific queries such as "speckled stoneware mug" or "dainty birthstone ring" bring shoppers who have their credit cards out and know exactly what they want.
+            </p>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-num">03</div>
+            <h3 class="benefit-title">Zero Subscription Tolls or Account Walls</h3>
+            <p class="benefit-desc">
+              Independent makers should not have to pay $20–$50 per month just to access basic keyword suggestions and tag character counters. Our tools are completely free, execute locally in your browser, and never harvest your private shop credentials.
+            </p>
+          </div>
+        </div>
+
+        <!-- Comprehensive SEO Article Copy (Authentic, Deep, Non-Generic) -->
+        <div class="content-block">
+          <h2>Understanding How Etsy Search (Query Matching &amp; Ranking) Really Works</h2>
+          <p>
+            Succeeding on Etsy requires understanding the two-phase system that powers Etsy's search engine: <strong>Query Matching</strong> and <strong>Listing Ranking</strong>.
+          </p>
+          <p>
+            During the initial Query Matching phase, Etsy gathers all listings that match the customer's search terms by inspecting listing titles, tags, categories, and custom attributes. Etsy's search algorithm does not require exact word-for-word string matches, but it places significant weight on exact phrase matches. When a shopper types a three-word phrase into the Etsy search bar, a listing that incorporates that exact multi-word phrase across its tags or title receives a substantial relevance boost over a listing where the words are scattered haphazardly.
+          </p>
+
+          <div class="highlight-box">
+            <p>
+              <strong>Key Ranking Factor:</strong> Etsy allows exactly 13 tags per listing, with each tag capped at 20 characters. Leaving even one tag slot empty or using generic single-word tags wastes valuable search real estate.
+            </p>
+          </div>
+
+          <h3>The Power of Listing Quality Score (LQS)</h3>
+          <p>
+            Once Query Matching generates a candidate pool of relevant items, Etsy's machine learning algorithm ranks the listings using a proprietary metric known as the <em>Listing Quality Score</em>. This score measures how frequently shoppers interact with your item when it appears in search results—specifically tracking clicks, favorites, add-to-carts, and completed purchases.
+          </p>
+          <p>
+            When you use high-relevance, descriptive long-tail tags, the shoppers who discover your listing are inherently better qualified. They click because the photo and title accurately match their specific search intent, which drives up your conversion rate and continuously lifts your Listing Quality Score over time.
+          </p>
+
+          <h3>Best Practices for Crafting High-Performing Etsy Listings</h3>
+          <ul>
+            <li><strong>Use all 13 tag slots:</strong> Every unused tag is a missed opportunity to be discovered by a unique search phrase.</li>
+            <li><strong>Favor multi-word phrases over single words:</strong> A tag like "rustic ceramic mug" covers searches for "ceramic mug", "rustic mug", and "rustic ceramic" simultaneously.</li>
+            <li><strong>Do not repeat your exact title in your tags:</strong> While your most important primary keyword should appear in both title and tags, use your remaining tags to capture synonyms, recipient ideas (e.g., "gift for potter"), and materials.</li>
+            <li><strong>Avoid repeating attributes:</strong> If your item is already categorized under "Ceramic Coffee Mugs" with the color attribute selected as "Green", you do not need to burn an entire tag on "green ceramic".</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="site-footer">
+    <div class="site-container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.85rem;">
+            <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1rem;">E</div>
+            <h3 style="margin: 0;">Etsy SEO Tools</h3>
+          </div>
+          <p>
+            Empowering independent artisans, craftspeople, and vintage curators with clean, free, client-side listing optimization utilities.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Tools &amp; Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="tag-generator/index.html">Tag &amp; Keyword Generator</a></li>
+            <li><a href="about/index.html">About &amp; Mission</a></li>
+            <li><a href="contact/index.html">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Transparency &amp; Legal</h4>
+          <ul class="footer-links">
+            <li><a href="privacy-policy/index.html">Privacy Policy</a></li>
+            <li><a href="sitemap.xml">Sitemap (XML)</a></li>
+            <li><a href="about/index.html#trademark-disclaimer">Trademark Notice</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Trademark Disclaimer -->
+      <div class="footer-disclaimer-box">
+        <strong>Disclaimer &amp; Trademark Notice:</strong> Etsy SEO Tools is an independent web application and educational resource. This site is not affiliated with, endorsed by, sponsored by, or associated with Etsy, Inc. The term "Etsy" is a registered trademark of Etsy, Inc. Any references to Etsy are used strictly for descriptive purposes to indicate the compatibility and purpose of these free optimization tools.
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 Etsy SEO Tools. All rights reserved. Built for makers &amp; artisans.</div>
+        <div>Fast, static, client-side web software.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
