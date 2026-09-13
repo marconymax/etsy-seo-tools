@@ -6,13 +6,16 @@
   <title>Etsy Tag Generator — Free Keyword &amp; Tag Tool for Etsy Listings</title>
   <meta name="description" content="Generate up to 13 high-intent, 20-character Etsy tags from your product title and description. Free, 100% client-side tag generator for Etsy sellers.">
   <link rel="canonical" href="https://etsy-seo-tools-glhd.vercel.app/tag-generator/">
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
+
   <!-- Sticky Header -->
   <header class="site-header">
     <div class="site-container">
@@ -21,6 +24,7 @@
           <div class="brand-icon">E</div>
           <span class="brand-text">Etsy SEO <span>Tools</span></span>
         </a>
+
         <nav aria-label="Primary Navigation">
           <ul class="nav-desktop">
             <li><a href="../index.html" class="nav-link">Home</a></li>
@@ -30,6 +34,7 @@
             <li><a href="#generator-tool" class="nav-btn">Generate Tags</a></li>
           </ul>
         </nav>
+
         <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -37,3 +42,221 @@
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Dropdown -->
+    <div class="mobile-nav-panel" id="mobileNavPanel">
+      <ul class="mobile-nav-list">
+        <li><a href="../index.html" class="mobile-nav-link">Home</a></li>
+        <li><a href="index.html" class="mobile-nav-link active">Tag Generator</a></li>
+        <li><a href="../about/index.html" class="mobile-nav-link">About</a></li>
+        <li><a href="../contact/index.html" class="mobile-nav-link">Contact</a></li>
+        <li><a href="../privacy-policy/index.html" class="mobile-nav-link">Privacy Policy</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Tool Header Section -->
+    <section class="hero" style="padding-bottom: 2rem;">
+      <div class="site-container">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Etsy Algorithm Optimized &bull; Max 20 Characters Per Tag
+        </div>
+        <h1 class="hero-title">
+          Etsy Tag &amp; Keyword <span>Generator</span>
+        </h1>
+        <p class="hero-subtitle">
+          Turn your listing title and description into 13 high-intent, long-tail Etsy tags. Automatically eliminates stop words, prioritizes high-conversion multi-word phrases, and strictly respects Etsy's 20-character rule.
+        </p>
+      </div>
+    </section>
+
+    <!-- Generator Workspace -->
+    <section class="site-container" id="generator-tool">
+      <div class="tool-workspace">
+        
+        <div class="form-group">
+          <div class="form-label">
+            <label for="listingInput">Paste Your Listing Title &amp; Description</label>
+            <span class="form-label-hint" id="charCount">0 characters</span>
+          </div>
+          <textarea 
+            id="listingInput" 
+            class="tool-textarea" 
+            placeholder="Example: Handmade Ceramic Coffee Mug - Rustic Speckled Stoneware Cup for Tea &amp; Espresso. Microwave and dishwasher safe, wheel-thrown artisan pottery with comfortable handle... (paste your draft or live listing here)"
+            aria-label="Listing title and description input"
+          ></textarea>
+        </div>
+
+        <div class="tool-controls">
+          <div class="tool-btn-group">
+            <button type="button" class="btn btn-primary" id="generateTagsBtn">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+              </svg>
+              Generate 13 Etsy Tags
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="sampleListingBtn">
+              Load Sample Listing
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="clearInputBtn">
+              Clear
+            </button>
+          </div>
+          <div class="text-stats" id="wordCount">0 words</div>
+        </div>
+
+        <!-- Output Results Container -->
+        <div class="results-container" id="resultsContainer">
+          <div class="results-header">
+            <div class="results-title-group">
+              <h2 class="results-title">Suggested Etsy Tags</h2>
+              <span class="tag-counter-badge" id="tagCountBadge">0 / 13 Tags</span>
+            </div>
+            <button type="button" class="btn btn-sage btn-sm" id="copyAllTagsBtn">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 2H9a3 3 0 01-3-2z"/>
+              </svg>
+              Copy All Tags
+            </button>
+          </div>
+
+          <div class="etsy-rule-callout">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <span><strong>Etsy Rule Compliant:</strong> Every tag is capped at 20 characters maximum. Click the &times; on any chip to remove it, or use the field below to add custom tags.</span>
+          </div>
+
+          <!-- Tag Chips Grid -->
+          <div class="tag-chips-wrapper" id="tagChipsWrapper">
+            <!-- Chips injected via script.js -->
+          </div>
+
+          <!-- Add Custom Tag Bar -->
+          <div class="add-custom-tag-bar">
+            <input 
+              type="text" 
+              class="add-tag-input" 
+              id="customTagInput" 
+              placeholder="Add your own custom tag (max 20 chars)..." 
+              maxlength="20"
+              aria-label="Add custom tag"
+            >
+            <button type="button" class="btn btn-secondary btn-sm" id="addCustomTagBtn">
+              + Add Tag
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Comprehensive Educational SEO Content Section (400+ words) -->
+      <article class="content-block" style="margin-bottom: 4rem;">
+        <h2>The Complete Guide to Etsy Tags and Search Visibility</h2>
+        <p>
+          On Etsy, tags are the foundational building blocks of organic search discovery. Alongside your listing title, categories, and attributes, your tags directly tell Etsy's search engine what your product is, who it is for, and which customer queries should trigger your listing in search results.
+        </p>
+
+        <h3>What Are Etsy Tags and Why Do They Matter?</h3>
+        <p>
+          An Etsy tag is a short descriptive phrase or keyword (up to 20 characters in length) that you assign to your product. Etsy grants every listing exactly 13 tag slots. Think of each tag as a unique search highway connecting a specific shopper to your storefront.
+        </p>
+        <p>
+          When an Etsy shopper searches for a gift, the search engine does not guess what your product looks like—it evaluates the text metadata you provide. If a customer searches for <em>"ceramic espresso cup"</em> and your listing does not contain that phrase or its constituent keywords in your tags, attributes, or title, your listing will simply not appear in that customer's search results, regardless of how exceptional your craftsmanship is.
+        </p>
+
+        <div class="sage-box">
+          <p>
+            <strong>Pro Tip on Long-Tail Keywords:</strong> Single-word tags like "mug" or "dress" are overly competitive and notoriously generic. Multi-word phrases like "stoneware cup" or "linen midi dress" target shoppers with clear purchase intent, converting into sales at a dramatically higher rate.
+          </p>
+        </div>
+
+        <h3>How This Tag Generator Works</h3>
+        <p>
+          Unlike generic keyword tools that produce irrelevant synonyms or scrape low-quality data, our tool runs an algorithmic n-gram extraction model directly inside your web browser:
+        </p>
+        <ol>
+          <li><strong>Text Cleansing:</strong> It strips out punctuation, emojis, and common English stop words (like "and", "with", "the", "for") that waste tag space.</li>
+          <li><strong>Phrase Tokenization:</strong> It analyzes single words (unigrams), 2-word phrases (bigrams), and 3-word combinations (trigrams) from your title and listing copy.</li>
+          <li><strong>Etsy-Specific Filtering:</strong> It enforces Etsy's strict 20-character rule, discarding any candidate phrase that would be rejected by the Etsy listing manager.</li>
+          <li><strong>Intent Weighting:</strong> Phrases appearing in your primary title and terms associated with gifting, materials, and artisan styles receive a relevance multiplier, giving you 13 balanced, ready-to-paste tags.</li>
+        </ol>
+
+        <h3>How to Optimize Your Listing with These Tags (Step-by-Step)</h3>
+        <ol>
+          <li><strong>Draft your listing:</strong> Write a descriptive title and 2–3 paragraphs explaining the item, materials, dimensions, and use cases.</li>
+          <li><strong>Paste into the generator:</strong> Paste your drafted copy into the box above and click <strong>Generate 13 Etsy Tags</strong>.</li>
+          <li><strong>Refine your list:</strong> Review the chips. If any tag does not fit your exact item, click the <code>&times;</code> icon to delete it and add a custom tag in the field below.</li>
+          <li><strong>Copy and Paste:</strong> Click <strong>Copy All Tags</strong>. In your Etsy Shop Manager listing editor, click into the "Tags" field and paste. Etsy automatically accepts comma-separated entries!</li>
+        </ol>
+
+        <h3>4 Critical Tag Mistakes to Avoid</h3>
+        <ul>
+          <li><strong>Leaving slots empty:</strong> Always use all 13 tags. Using only 7 or 8 tags is voluntarily giving up 40% of your potential search reach.</li>
+          <li><strong>Repeating attributes:</strong> If you selected "Ceramic" in the category dropdown or "Blue" in the color attribute, Etsy already indexes your item for those terms. Use your tags for recipient ideas, occasions, and stylistic phrases instead.</li>
+          <li><strong>Splitting phrases into single words:</strong> Never enter "coffee" as one tag and "mug" as a separate tag. Use the compound tag "coffee mug" (10 characters), which automatically covers both searches while leaving another tag slot open!</li>
+          <li><strong>Using misleading or trademarked keywords:</strong> Never tag an item with registered brand names (e.g. "Disney style" or "Nike inspired") as this violates Etsy's Intellectual Property policies and can lead to listing deactivation.</li>
+        </ul>
+      </article>
+
+    </section>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="site-footer">
+    <div class="site-container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.85rem;">
+            <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1rem;">E</div>
+            <h3 style="margin: 0;">Etsy SEO Tools</h3>
+          </div>
+          <p>
+            Empowering independent artisans, craftspeople, and vintage curators with clean, free, client-side listing optimization utilities.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Tools &amp; Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="index.html">Tag &amp; Keyword Generator</a></li>
+            <li><a href="../about/index.html">About &amp; Mission</a></li>
+            <li><a href="../contact/index.html">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Transparency &amp; Legal</h4>
+          <ul class="footer-links">
+            <li><a href="../privacy-policy/index.html">Privacy Policy</a></li>
+            <li><a href="../sitemap.xml">Sitemap (XML)</a></li>
+            <li><a href="../about/index.html#trademark-disclaimer">Trademark Notice</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Trademark Disclaimer -->
+      <div class="footer-disclaimer-box">
+        <strong>Disclaimer &amp; Trademark Notice:</strong> Etsy SEO Tools is an independent web application and educational resource. This site is not affiliated with, endorsed by, sponsored by, or associated with Etsy, Inc. The term "Etsy" is a registered trademark of Etsy, Inc. Any references to Etsy are used strictly for descriptive purposes to indicate the compatibility and purpose of these free optimization tools.
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 Etsy SEO Tools. All rights reserved. Built for makers &amp; artisans.</div>
+        <div>Fast, static, client-side web software.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../script.js"></script>
+</body>
+</html>
