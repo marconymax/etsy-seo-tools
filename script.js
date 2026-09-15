@@ -679,10 +679,17 @@ async function fetchDatamuseCombinations(rawText) {
 
   const candidates = [];
   for (const rel of relatedWords) {
+    const anchor = rel.toLowerCase().trim();
     for (const np of nounPhrases) {
-      const combo = `${rel} ${np}`;
+      const combo = `${anchor} ${np}`;
       if (isNaturalPhrase(combo)) {
-        candidates.push({ text: combo, score: 6.2, category: 'descriptor', expanded: true });
+        candidates.push({
+          text: combo,
+          score: 6.2,
+          category: 'descriptor',
+          expanded: true,
+          anchorWord: anchor
+        });
       }
     }
   }
@@ -746,36 +753,60 @@ function selectTopDiverseTags(rankedCandidates, rawText) {
   const categoryCounts = { descriptor: 0, occasion: 0, recipient: 0, useCase: 0 };
   const MAX_PER_CAT    = { descriptor: 6, occasion: 3, recipient: 2, useCase: 3 };
 
-  // Pass 1: Multi-word phrases with diversity limits & concept cluster deduplication
+  // Secondary diversity rule: track how many times each individual related/expanded anchor word is used
+  const anchorUsage = new Map();
+
+  function canUseAnchor(c, maxAllowed = 1) {
+    if (!c.anchorWord) return true;
+    const count = anchorUsage.get(c.anchorWord) || 0;
+    return count < maxAllowed;
+  }
+
+  function recordAnchor(c) {
+    if (c.anchorWord) {
+      anchorUsage.set(c.anchorWord, (anchorUsage.get(c.anchorWord) || 0) + 1);
+    }
+  }
+
+  // Pass 1: Multi-word phrases with diversity limits, concept cluster deduplication & single-pivot cap (max 1 per anchor)
   for (const c of rankedCandidates) {
     if (selected.length >= 13) break;
     const cat = c.category || 'descriptor';
     if ((categoryCounts[cat] || 0) >= (MAX_PER_CAT[cat] || 3)) continue;
 
+    // Enforce at most 1 tag per expanded anchor word
+    if (!canUseAnchor(c, 1)) continue;
+
     if (!sharesCoreConcept(c.text, selected)) {
-      selected.push({ text: c.text, expanded: c.expanded });
+      selected.push({ text: c.text, expanded: c.expanded, anchorWord: c.anchorWord });
+      recordAnchor(c);
       categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
     }
   }
 
-  // Pass 2: Fill remaining slots with other natural multi-word candidates
+  // Pass 2: Fill remaining slots with other natural multi-word candidates (still cap anchor at 1)
   if (selected.length < 13) {
     for (const c of rankedCandidates) {
       if (selected.length >= 13) break;
       if (selected.some(s => s.text === c.text)) continue;
+      if (!canUseAnchor(c, 1)) continue;
+
       if (!sharesCoreConcept(c.text, selected)) {
-        selected.push({ text: c.text, expanded: c.expanded });
+        selected.push({ text: c.text, expanded: c.expanded, anchorWord: c.anchorWord });
+        recordAnchor(c);
       }
     }
   }
 
-  // Pass 3: Relaxed multi-word check if still under 13
+  // Pass 3: Relaxed pass if not enough other candidates to fill all 13 slots (allow max 2 per anchor)
   if (selected.length < 13) {
     for (const c of rankedCandidates) {
       if (selected.length >= 13) break;
-      if (!selected.some(s => s.text === c.text)) {
-        selected.push({ text: c.text, expanded: c.expanded });
-      }
+      if (selected.some(s => s.text === c.text)) continue;
+      if (!canUseAnchor(c, 2)) continue;
+
+      selected.push({ text: c.text, expanded: c.expanded, anchorWord: c.anchorWord });
+      recordAnchor(c);
     }
   }
 
