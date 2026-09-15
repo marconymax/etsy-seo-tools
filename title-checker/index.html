@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Etsy Title Checker — Free Listing Score Tool</title>
+  <meta name="description" content="Instantly score and improve your Etsy listing title. Check character count, keyword front-loading, readability, spam signals, and get a ready-to-use improved title suggestion — free, 100% in your browser.">
+  <link rel="canonical" href="https://etsy-seo-tools-glhd.vercel.app/title-checker/">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" href="/favicon.ico">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Etsy Title Checker — Free Listing Score Tool">
+  <meta property="og:description" content="Instantly score and improve your Etsy listing title. Check character count, keyword front-loading, readability, spam signals, and get a ready-to-use improved title suggestion — free, 100% in your browser.">
+  <meta property="og:url" content="https://etsy-seo-tools-glhd.vercel.app/title-checker/">
+  <meta property="og:site_name" content="Etsy SEO Tools">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Etsy Title Checker — Free Listing Score Tool">
+  <meta name="twitter:description" content="Instantly score and improve your Etsy listing title. Check character count, keyword front-loading, readability, spam signals, and get a ready-to-use improved title suggestion — free, 100% in your browser.">
+
+  <!-- SoftwareApplication Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Etsy Title Checker",
+    "operatingSystem": "All modern web browsers",
+    "applicationCategory": "BusinessApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Free, 100% client-side Etsy listing title audit tool that scores titles across 14 checks covering keyword front-loading, readability, character compliance, spam signals, and more.",
+    "url": "https://etsy-seo-tools-glhd.vercel.app/title-checker/"
+  }
+  </script>
+
+  <!-- FAQPage Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How long should an Etsy listing title be?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Etsy allows up to 140 characters per listing title. Research consistently shows that titles between 80 and 140 characters perform best because they give you space to include a primary keyword phrase, key attributes (material, style, occasion), and a use-case signal. Titles shorter than 70 characters usually leave valuable keyword real estate unused."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What does keyword front-loading mean for Etsy titles?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Front-loading means placing your most important search keyword phrase within the first 40 to 60 characters of your title. Etsy mobile search results truncate titles after roughly 40 to 60 characters, so buyers searching for your product type should see your primary phrase immediately."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does my Etsy title affect Etsy search ranking?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, significantly. Etsy's search algorithm treats your listing title as one of the strongest keyword signals, especially the first few words. Words appearing in both your title and your tags receive a title-tag match boost in search relevance scoring."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What counts as keyword stuffing in an Etsy title?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Keyword stuffing is when a title reads like a comma-separated list of search terms rather than a natural product description. Signs include more than two or three commas in a single title, the same word repeated multiple times, ALL CAPS words, excessive punctuation like three exclamation marks or asterisks, and near-synonym stacking such as Mug Cup Tumbler Vessel all in one title."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Should I match my Etsy title keywords to my tags?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Etsy gives a relevance boost when a keyword phrase appears in both your title and your tags. Aim to have your top two or three title phrases also appear as tags. Our free Tag Generator analyses your listing copy to surface exactly those high-intent phrases."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <!-- Sticky Header -->
+  <header class="site-header">
+    <div class="site-container">
+      <div class="header-inner">
+        <a href="/" class="brand-logo" aria-label="Etsy SEO Tools Home">
+          <div class="brand-icon">E</div>
+          <span class="brand-text">Etsy SEO <span>Tools</span></span>
+        </a>
+
+        <nav aria-label="Primary Navigation">
+          <ul class="nav-desktop">
+            <li><a href="/" class="nav-link">Home</a></li>
+            <li><a href="/tag-generator/" class="nav-link">Tag Generator</a></li>
+            <li><a href="/title-checker/" class="nav-link active">Title Checker</a></li>
+            <li><a href="/about/" class="nav-link">About</a></li>
+            <li><a href="/contact/" class="nav-link">Contact</a></li>
+            <li><a href="#title-checker-tool" class="nav-btn">Check My Title</a></li>
+          </ul>
+        </nav>
+
+        <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Dropdown -->
+    <div class="mobile-nav-panel" id="mobileNavPanel">
+      <ul class="mobile-nav-list">
+        <li><a href="/" class="mobile-nav-link">Home</a></li>
+        <li><a href="/tag-generator/" class="mobile-nav-link">Tag Generator</a></li>
+        <li><a href="/title-checker/" class="mobile-nav-link active">Title Checker</a></li>
+        <li><a href="/about/" class="mobile-nav-link">About</a></li>
+        <li><a href="/contact/" class="mobile-nav-link">Contact</a></li>
+        <li><a href="/privacy-policy/" class="mobile-nav-link">Privacy Policy</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="site-container">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Free Title Audit &bull; 14 Checks &bull; Instant Score
+        </div>
+        <h1 class="hero-title">
+          Etsy <span>Title Checker</span>
+        </h1>
+        <p class="hero-subtitle">
+          Paste your Etsy listing title and get an instant score out of 100. See exactly which checks pass or fail, and get a ready-to-use improved version — all in seconds, completely free.
+        </p>
+      </div>
+    </section>
+
+    <!-- Tool Section -->
+    <section class="section" id="title-checker-tool">
+      <div class="site-container">
+
+        <!-- Input Card -->
+        <div class="tool-input-card">
+          <div class="input-label-row">
+            <label for="titleInput" class="input-label">Your Etsy Listing Title</label>
+            <span class="char-counter" id="titleCharCounter">0 / 140</span>
+          </div>
+          <input
+            type="text"
+            id="titleInput"
+            class="title-input"
+            placeholder="e.g. Handmade Ceramic Coffee Mug, Rustic Stoneware Cup, Gift for Her, 12oz"
+            maxlength="200"
+            autocomplete="off"
+            spellcheck="true"
+          >
+          <div class="tool-actions-row">
+            <button type="button" class="btn btn-primary" id="checkTitleBtn">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              Check My Title
+            </button>
+            <button type="button" class="btn btn-secondary" id="sampleTitleBtn">Load Sample Title</button>
+            <button type="button" class="btn btn-ghost" id="clearTitleBtn">Clear</button>
+          </div>
+        </div>
+
+        <!-- Results Container (hidden until check runs) -->
+        <div id="titleResultsContainer" class="title-results-container" style="display: none;">
+
+          <!-- Score Card -->
+          <div id="titleScoreCard" class="title-score-card">
+            <div class="score-display">
+              <span id="scoreNumber" class="score-number">0</span>
+              <span class="score-denom">/100</span>
+            </div>
+            <div id="scoreLabel" class="score-label">Checking&hellip;</div>
+            <p id="scoreBlurb" class="score-blurb"></p>
+          </div>
+
+          <!-- Structure & Content Checks -->
+          <div class="checks-group">
+            <h3 class="checks-group-title">Structure &amp; Content</h3>
+            <ul id="structureChecks" class="checks-list"></ul>
+          </div>
+
+          <!-- Technical Rule Checks -->
+          <div class="checks-group">
+            <h3 class="checks-group-title">Technical Rules</h3>
+            <ul id="technicalChecks" class="checks-list"></ul>
+          </div>
+
+          <!-- Suggested Improved Title Card -->
+          <div id="titleSuggestionCard" class="title-suggestion-card" style="display: none;">
+            <h3 class="suggestion-heading">Suggested Improved Title</h3>
+            <div id="suggestedTitle" class="suggested-title-text"></div>
+            <p class="suggestion-disclaimer">Review and personalise this suggestion before using it — you know your product best.</p>
+            <button type="button" class="btn btn-sm btn-outline-terracotta" id="copySuggestedTitleBtn">Copy Suggestion</button>
+          </div>
+
+          <!-- Excellent score congratulation (shown only when score >= 80) -->
+          <div id="titleCongratCard" class="title-congrat-card" style="display: none;">
+            <svg width="28" height="28" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <div>
+              <strong>Great title!</strong> Your listing title scores well across all checks. Keep it as-is, or use it as a strong base when creating variations for other listings.
+            </div>
+          </div>
+
+          <!-- Cross-tool Tip -->
+          <div class="cross-tool-tip">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <span>Etsy boosts listings where your title phrases also appear as tags. Use the <a href="/tag-generator/">free Tag Generator</a> to fill all 13 tag slots from your updated title.</span>
+          </div>
+
+        </div>
+        <!-- /titleResultsContainer -->
+
+      </div>
+    </section>
+
+    <!-- Educational Content -->
+    <section class="section" style="background: var(--bg-alt);">
+      <div class="site-container">
+        <div class="content-block" style="max-width: 860px; margin: 0 auto;">
+
+          <div class="section-header">
+            <span class="section-tag">Etsy Title Strategy</span>
+            <h2 class="section-title">Why Your Listing Title Is Your Most Important SEO Signal</h2>
+          </div>
+
+          <p>
+            Your Etsy listing title is the single highest-weight piece of text in Etsy's search algorithm. Before a buyer ever sees your photos, long description, or price, the algorithm has already used your title to decide whether your listing is relevant to their search query. Getting it right is not optional — it is the foundation everything else is built on.
+          </p>
+
+          <h3>The 40-Character Rule Most Sellers Ignore</h3>
+          <p>
+            On mobile devices — which now account for over 60% of Etsy traffic — search result snippets cut off after roughly 40–60 characters. That means the first handful of words in your title are the only words most shoppers will read before deciding whether to click. If your title starts with filler words like "Beautiful", "Amazing", "High Quality", or your shop name, your primary product keyword gets pushed off-screen entirely.
+          </p>
+          <p>
+            The fix is straightforward: lead with the specific product type and its most important modifier. "Handmade Ceramic Coffee Mug" beats "Beautiful Coffee Lover Gift — Handmade Ceramic Mug" every time, because the first version puts the searchable phrase in the first 25 characters where it will always be visible.
+          </p>
+
+          <h3>Character Count: Use All 140 Characters</h3>
+          <p>
+            Etsy's title field accepts up to 140 characters, and every unused character is a missed opportunity. Short titles (under 70 characters) leave space on the table that could be used to mention the material, a style attribute, a use-case ("gift for coffee lovers"), or a specific size or colour variant. Buyers often search for very specific combinations of attributes — a complete title catches many more of those long-tail queries than a sparse one.
+          </p>
+          <p>
+            That said, hitting 140 characters does not mean stuffing in random keywords. Each added detail should tell a buyer something genuinely useful: what it is, what it's made of, who it's for, and what makes it different. A natural, readable title that uses most of the character allowance consistently outperforms both sparse titles and keyword-dumped ones.
+          </p>
+
+          <h3>Title-to-Tag Alignment: The Multiplier Effect</h3>
+          <p>
+            Etsy's algorithm gives an explicit relevance boost when a keyword phrase appears in both your title and your tags. This "title-tag match" is one of the most well-documented patterns in Etsy SEO. When you update your title to include a specific phrase like "rustic stoneware mug," make sure that exact phrase (or its component words) also appear in your 13 tags. Our <a href="/tag-generator/">free Tag Generator</a> analyses your listing text and generates 13 high-intent tags in seconds — making it easy to stay aligned without any guesswork.
+          </p>
+
+          <h3>Readability Signals Etsy Actually Cares About</h3>
+          <p>
+            Etsy publicly discourages "keyword stuffing" — titles that read as comma-separated lists of unconnected search terms. Beyond the guidelines, there is a practical reason to write readable titles: click-through rate matters. When two listings rank similarly in search, Etsy's algorithm increasingly favours the one that buyers actually click on. A title that reads naturally is clicked more often than one that reads like a database export.
+          </p>
+          <p>
+            Signs of a stuffed title include: excessive commas, the same word repeated twice, ALL CAPS words or phrases, and near-synonym stacking ("Mug Cup Tumbler Vessel Bowl" — choose one noun). Our Title Checker automatically flags all of these patterns and suggests how to fix them.
+          </p>
+
+          <h3>Special Characters and Symbols</h3>
+          <p>
+            Etsy allows hyphens, ampersands, commas, and standard apostrophes in titles. Emojis, trademark symbols, and decorative Unicode characters are technically allowed but create two problems: they consume your character budget faster than plain letters do, and they are often invisible or broken in some search contexts. Our tool flags any emoji or unusual character so you can make a conscious choice about whether to keep it.
+          </p>
+
+          <div class="highlight-box">
+            <p>
+              <strong>Quick Reference — Ideal Etsy Title Formula:</strong> [Primary Keyword Phrase] + [Material or Medium] + [Style or Attribute] + [Use-case or Recipient Signal] + [Size or Variant if relevant]. Keep it readable, front-load the keyword, and use 80–140 characters.
+            </p>
+          </div>
+
+          <!-- FAQ Section -->
+          <div class="faq-section" style="margin-top: 3rem;">
+            <div class="section-header" style="text-align: left; padding-bottom: 1rem;">
+              <h2 class="section-title" style="font-size: 1.6rem;">Common Questions</h2>
+            </div>
+
+            <div class="faq-list">
+              <div class="faq-card">
+                <h3 class="faq-question">How long should an Etsy listing title be?</h3>
+                <p class="faq-answer">
+                  Etsy allows up to 140 characters. Research consistently shows that titles between 80 and 140 characters perform best — long enough to include your primary keyword, material, style, and a use-case signal, but short enough to still be readable. Titles under 70 characters usually leave valuable keyword real estate unused.
+                </p>
+              </div>
+
+              <div class="faq-card">
+                <h3 class="faq-question">What does "keyword front-loading" mean?</h3>
+                <p class="faq-answer">
+                  It means placing your most important search keyword phrase within the first 40–60 characters. Etsy mobile results truncate titles at around that length, so buyers only see your first few words before deciding to click. If those words are filler ("Beautiful", "High Quality"), your actual product keyword phrase is invisible in search snippets.
+                </p>
+              </div>
+
+              <div class="faq-card">
+                <h3 class="faq-question">Does my title affect Etsy search ranking?</h3>
+                <p class="faq-answer">
+                  Yes — significantly. Etsy's algorithm treats your title as the strongest keyword signal, especially the first few words. Phrases that appear in both your title and your tags receive a relevance boost. This is why our Title Checker specifically examines your front-loading and why we recommend pairing it with our free <a href="/tag-generator/">Tag Generator</a>.
+                </p>
+              </div>
+
+              <div class="faq-card">
+                <h3 class="faq-question">What counts as keyword stuffing in an Etsy title?</h3>
+                <p class="faq-answer">
+                  Keyword stuffing is when your title reads as a list of disconnected search terms rather than a natural description. Signs include excessive commas, repeated words, ALL CAPS, excessive punctuation ("!!!", "***"), and near-synonym stacking ("Mug Cup Tumbler Vessel"). Etsy discourages it, and buyers are far less likely to click visually cluttered titles.
+                </p>
+              </div>
+
+              <div class="faq-card">
+                <h3 class="faq-question">Should I match my title keywords to my tags?</h3>
+                <p class="faq-answer">
+                  Yes. Etsy gives a relevance boost when a keyword phrase appears in both your title and your tags. Aim to have your top 2–3 title phrases also appear as tags. Our <a href="/tag-generator/">Tag Generator</a> surfaces exactly those high-intent phrases from your listing copy, making alignment easy.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="site-footer">
+    <div class="site-container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.85rem;">
+            <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1rem;">E</div>
+            <h3 style="margin: 0;">Etsy SEO Tools</h3>
+          </div>
+          <p>
+            Empowering independent artisans, craftspeople, and vintage curators with clean, free, client-side listing optimization utilities.
+          </p>
+          <div class="footer-social-row">
+            <a href="#" class="social-link" aria-label="Follow Etsy SEO Tools on Pinterest" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345-.09.375-.291 1.199-.334 1.357-.053.224-.174.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.546.535 6.627 0 12-5.373 12-12 0-6.627-5.373-12-12-12z"/></svg>
+            </a>
+            <a href="#" class="social-link" aria-label="Follow Etsy SEO Tools on Instagram" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Tools &amp; Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/tag-generator/">Tag &amp; Keyword Generator</a></li>
+            <li><a href="/title-checker/">Etsy Title Checker</a></li>
+            <li><a href="/about/">About &amp; Mission</a></li>
+            <li><a href="/contact/">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Transparency &amp; Legal</h4>
+          <ul class="footer-links">
+            <li><a href="/privacy-policy/">Privacy Policy</a></li>
+            <li><a href="/sitemap.xml">Sitemap (XML)</a></li>
+            <li><a href="/about/#trademark-disclaimer">Trademark Notice</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Trademark Disclaimer -->
+      <div class="footer-disclaimer-box">
+        <strong>Disclaimer &amp; Trademark Notice:</strong> Etsy SEO Tools is an independent web application and educational resource. This site is not affiliated with, endorsed by, sponsored by, or associated with Etsy, Inc. The term "Etsy" is a registered trademark of Etsy, Inc. Any references to Etsy are used strictly for descriptive purposes to indicate the compatibility and purpose of these free optimization tools.
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 Etsy SEO Tools. All rights reserved. Built for makers &amp; artisans.</div>
+        <div>Fast, static, client-side web software.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/script.js"></script>
+</body>
+</html>
