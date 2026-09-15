@@ -6,6 +6,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initTagGenerator();
+  initTitleChecker();
   initCopyEmail();
 });
 
@@ -834,4 +835,715 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+
+/* ==========================================================================
+   Etsy Title Checker Engine & UI
+   ========================================================================== */
+
+const TITLE_CHECKER_MATERIALS = new Set([
+  'ceramic', 'stoneware', 'porcelain', 'earthenware', 'clay', 'terracotta',
+  'gold', 'silver', 'sterling', 'brass', 'copper', 'bronze', 'wood', 'wooden',
+  'leather', 'glass', 'linen', 'cotton', 'wool', 'silk', 'velvet', 'canvas',
+  'resin', 'acrylic', 'vinyl', 'titanium', 'pewter', 'rattan', 'bamboo', 'paper',
+  'enamel', 'slate', 'marble', 'granite', 'metal'
+]);
+
+const TITLE_CHECKER_STYLES = new Set([
+  'rustic', 'boho', 'bohemian', 'minimalist', 'modern', 'vintage', 'retro',
+  'handmade', 'handcrafted', 'handthrown', 'wheelthrown', 'personalized',
+  'custom', 'customizable', 'organic', 'dainty', 'chunky', 'oversized',
+  'geometric', 'abstract', 'floral', 'artisanal', 'antique', 'aesthetic',
+  'gothic', 'farmhouse', 'industrial', 'cozy', 'cottagecore', 'y2k',
+  'whimsical', 'nautical', 'scandinavian', 'mid century', 'nordic', 'speckled'
+]);
+
+const TITLE_CHECKER_RECIPIENTS = [
+  'gift for her', 'gift for him', 'gift for mom', 'gift for dad', 'gift for women',
+  'gift for men', 'gift for friend', 'gift for girlfriend', 'gift for boyfriend',
+  'gift for wife', 'gift for husband', 'gift for sister', 'gift for brother',
+  'gift for daughter', 'gift for son', 'birthday gift', 'wedding gift', 'anniversary gift',
+  'housewarming gift', 'christmas gift', 'holiday gift', 'bridesmaid gift', 'baby shower',
+  'coffee lover', 'tea lover', 'book lover', 'cat lover', 'dog lover', 'plant lover',
+  'teacher gift', 'gift', 'gifts', 'present', 'presents', 'for her', 'for him',
+  'for mom', 'for dad', 'for women', 'for men', 'for friend', 'birthday',
+  'wedding', 'anniversary', 'housewarming', 'christmas', 'holiday'
+];
+
+const TITLE_CHECKER_SYNONYMS = [
+  ['mug', 'cup'],
+  ['mug', 'tumbler'],
+  ['cup', 'tumbler'],
+  ['necklace', 'pendant'],
+  ['print', 'poster'],
+  ['print', 'art'],
+  ['poster', 'art'],
+  ['bag', 'tote'],
+  ['bag', 'purse'],
+  ['tote', 'purse'],
+  ['wallet', 'purse'],
+  ['blanket', 'throw'],
+  ['pillow', 'cushion'],
+  ['shirt', 'tee'],
+  ['candle', 'wax']
+];
+
+const TITLE_CHECKER_GENERIC_OPENERS = [
+  'beautiful', 'gorgeous', 'amazing', 'stunning', 'best', 'top', 'high quality',
+  'premium', 'sale', 'free shipping', 'discount', 'cheap', 'hot', 'new', 'perfect',
+  'lovely', 'awesome', 'nice', 'great'
+];
+
+const TITLE_CHECKER_MILD_OPENERS = [
+  'the', 'a', 'an', 'our', 'my', 'this', 'these', 'welcome', 'buy', 'shop', 'get'
+];
+
+function initTitleChecker() {
+  const titleInput = document.getElementById('titleInput');
+  const checkTitleBtn = document.getElementById('checkTitleBtn');
+  const sampleTitleBtn = document.getElementById('sampleTitleBtn');
+  const clearTitleBtn = document.getElementById('clearTitleBtn');
+  const titleCharCounter = document.getElementById('titleCharCounter');
+  const titleResultsContainer = document.getElementById('titleResultsContainer');
+  const titleScoreCard = document.getElementById('titleScoreCard');
+  const scoreNumber = document.getElementById('scoreNumber');
+  const scoreLabel = document.getElementById('scoreLabel');
+  const scoreBlurb = document.getElementById('scoreBlurb');
+  const structureChecks = document.getElementById('structureChecks');
+  const technicalChecks = document.getElementById('technicalChecks');
+  const titleSuggestionCard = document.getElementById('titleSuggestionCard');
+  const suggestedTitle = document.getElementById('suggestedTitle');
+  const copySuggestedTitleBtn = document.getElementById('copySuggestedTitleBtn');
+  const titleCongratCard = document.getElementById('titleCongratCard');
+
+  if (!titleInput || !checkTitleBtn) return;
+
+  function updateCharCounter() {
+    const len = titleInput.value.length;
+    if (titleCharCounter) {
+      titleCharCounter.textContent = `${len} / 140`;
+      titleCharCounter.classList.remove('is-warning', 'is-danger');
+      if (len > 140) {
+        titleCharCounter.classList.add('is-danger');
+      } else if (len > 0 && len < 70) {
+        titleCharCounter.classList.add('is-warning');
+      }
+    }
+  }
+
+  titleInput.addEventListener('input', updateCharCounter);
+
+  if (sampleTitleBtn) {
+    sampleTitleBtn.addEventListener('click', () => {
+      titleInput.value = 'Handmade Ceramic Coffee Mug, Rustic Stoneware Pottery Cup, Cozy Gift for Tea Lovers, 12oz';
+      updateCharCounter();
+      runTitleCheck();
+    });
+  }
+
+  if (clearTitleBtn) {
+    clearTitleBtn.addEventListener('click', () => {
+      titleInput.value = '';
+      updateCharCounter();
+      if (titleResultsContainer) titleResultsContainer.style.display = 'none';
+      titleInput.focus();
+    });
+  }
+
+  if (copySuggestedTitleBtn && suggestedTitle) {
+    copySuggestedTitleBtn.addEventListener('click', () => {
+      const text = suggestedTitle.textContent.trim();
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Suggested title copied to clipboard!');
+      }).catch(() => {
+        showToast('Copied to clipboard');
+      });
+    });
+  }
+
+  checkTitleBtn.addEventListener('click', runTitleCheck);
+  titleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      runTitleCheck();
+    }
+  });
+
+  function getSvgIcon(status) {
+    if (status === 'pass') {
+      return `<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>`;
+    } else if (status === 'warn') {
+      return `<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
+    } else {
+      return `<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>`;
+    }
+  }
+
+  function renderCheckList(container, checks) {
+    container.innerHTML = checks.map(check => `
+      <li class="check-item check-status-${check.status}">
+        <div class="check-icon">${getSvgIcon(check.status)}</div>
+        <div class="check-content">
+          <div class="check-header">
+            <span class="check-title">${escapeHtml(check.title)}</span>
+            <span class="check-pts">${check.pts} / ${check.maxPts} pts</span>
+          </div>
+          <p class="check-desc">${check.desc}</p>
+        </div>
+      </li>
+    `).join('');
+  }
+
+  function runTitleCheck() {
+    const rawTitle = titleInput.value.trim();
+    if (!rawTitle) {
+      showToast('Please enter an Etsy listing title to check.');
+      titleInput.focus();
+      return;
+    }
+
+    const titleLower = rawTitle.toLowerCase();
+    const words = titleLower.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 0);
+
+    // Find product nouns and their positions
+    let detectedNouns = [];
+    let earliestNoun = null;
+    let earliestNounPos = -1;
+
+    for (const word of words) {
+      if (PRODUCT_NOUNS.has(word) && !detectedNouns.includes(word)) {
+        detectedNouns.push(word);
+        const idx = titleLower.indexOf(word);
+        if (earliestNounPos === -1 || idx < earliestNounPos) {
+          earliestNounPos = idx;
+          earliestNoun = word;
+        }
+      }
+    }
+
+    // Detect materials
+    let detectedMaterials = [];
+    for (const mat of TITLE_CHECKER_MATERIALS) {
+      if (titleLower.includes(mat) && !detectedMaterials.includes(mat)) {
+        detectedMaterials.push(mat);
+      }
+    }
+
+    // Detect styles
+    let detectedStyles = [];
+    for (const style of TITLE_CHECKER_STYLES) {
+      if (titleLower.includes(style) && !detectedStyles.includes(style)) {
+        detectedStyles.push(style);
+      }
+    }
+
+    // Detect recipients / occasions
+    let detectedRecipient = null;
+    for (const rec of TITLE_CHECKER_RECIPIENTS) {
+      if (titleLower.includes(rec)) {
+        detectedRecipient = rec;
+        break;
+      }
+    }
+
+    // Detect synonym pairs
+    let foundSynPairs = [];
+    for (const [s1, s2] of TITLE_CHECKER_SYNONYMS) {
+      if (words.includes(s1) && words.includes(s2)) {
+        foundSynPairs.push([s1, s2]);
+      }
+    }
+
+    // Detect opening buzzword / filler
+    let genericOpenerFound = null;
+    for (const opener of TITLE_CHECKER_GENERIC_OPENERS) {
+      if (titleLower.startsWith(opener + ' ') || titleLower === opener) {
+        genericOpenerFound = opener;
+        break;
+      }
+    }
+
+    let mildOpenerFound = null;
+    if (!genericOpenerFound) {
+      for (const opener of TITLE_CHECKER_MILD_OPENERS) {
+        if (titleLower.startsWith(opener + ' ') || titleLower === opener) {
+          mildOpenerFound = opener;
+          break;
+        }
+      }
+    }
+
+    // Separators count (commas, pipes, slashes)
+    const commasCount = (rawTitle.match(/,/g) || []).length;
+    const pipesSlashesCount = (rawTitle.match(/[\|\/]/g) || []).length;
+    const totalSeparators = commasCount + pipesSlashesCount;
+
+    // Group 1: Structure & Content Checks (8 checks, 8 pts each = 64 pts)
+    const structureList = [];
+
+    // Check 1: Primary keyword front-loading
+    if (earliestNoun && earliestNounPos >= 0 && earliestNounPos <= 45) {
+      structureList.push({
+        title: 'Primary Keyword Front-Loading',
+        status: 'pass',
+        pts: 8,
+        maxPts: 8,
+        desc: `Primary product keyword "${earliestNoun}" appears at character index ${earliestNounPos}, ensuring it is instantly visible to mobile shoppers.`
+      });
+    } else if (earliestNoun && earliestNounPos > 45 && earliestNounPos <= 65) {
+      structureList.push({
+        title: 'Primary Keyword Front-Loading',
+        status: 'warn',
+        pts: 4,
+        maxPts: 8,
+        desc: `Primary keyword "${earliestNoun}" begins around character index ${earliestNounPos}. Mobile viewports truncate around 40–50 characters; try moving this closer to the start.`
+      });
+    } else {
+      structureList.push({
+        title: 'Primary Keyword Front-Loading',
+        status: 'fail',
+        pts: 0,
+        maxPts: 8,
+        desc: 'No clear product keyword found within the first 65 characters. Always place what you are selling near the very front.'
+      });
+    }
+
+    // Check 2: Product type clarity
+    if (earliestNoun) {
+      structureList.push({
+        title: 'Product Type Clarity',
+        status: 'pass',
+        pts: 8,
+        maxPts: 8,
+        desc: `Clearly identifies your product as a "${earliestNoun}" so buyers and search engines immediately understand what is for sale.`
+      });
+    } else {
+      structureList.push({
+        title: 'Product Type Clarity',
+        status: 'fail',
+        pts: 0,
+        maxPts: 8,
+        desc: 'Could not identify a standard product noun (like mug, necklace, candle, print). Clearly state what the physical or digital item is.'
+      });
+    }
+
+    // Check 3: Material or medium presence
+    if (detectedMaterials.length > 0) {
+      structureList.push({
+        title: 'Material or Medium',
+        status: 'pass',
+        pts: 8,
+        maxPts: 8,
+        desc: `Mentions material (${detectedMaterials.slice(0, 2).join(', ')}), helping capture material-filtered searches and reinforcing craft quality.`
+      });
+    } else {
+      structureList.push({
+        title: 'Material or Medium',
+        status: 'warn',
+        pts: 4,
+        maxPts: 8,
+        desc: 'No specific material detected (e.g. ceramic, wood, sterling silver, linen). Adding materials captures high-intent searches from shoppers with specific tastes.'
+      });
+    }
+
+    // Check 4: Distinguishing style or attribute
+    if (detectedStyles.length > 0) {
+      structureList.push({
+        title: 'Distinguishing Style or Attribute',
+        status: 'pass',
+        pts: 8,
+        maxPts: 8,
+        desc: `Includes style modifier "${detectedStyles[0]}", appealing to aesthetic-specific searchers (e.g. rustic, minimalist, vintage).`
+      });
+    } else {
+      structureList.push({
+        title: 'Distinguishing Style or Attribute',
+        status: 'warn',
+        pts: 4,
+        maxPts: 8,
+        desc: 'No style or technique modifier detected (e.g. rustic, minimalist, boho, vintage, personalized). Consider adding one to stand out in search results.'
+      });
+    }
+
+    // Check 5: Use-case or recipient angle
+    if (detectedRecipient) {
+      structureList.push({
+        title: 'Use-Case or Recipient Angle',
+        status: 'pass',
+        pts: 8,
+        maxPts: 8,
+        desc: `Includes recipient or occasion angle ("${detectedRecipient}"), connecting directly with high-converting gift shoppers.`
+      });
+    } else {
+      structureList.push({
+        title: 'Use-Case or Recipient Angle',
+        status: 'warn',
+        pts: 4,
+        maxPts: 8,
+        desc: 'No gift recipient or occasion phrase detected. If this item is suitable as a present, adding an angle like "gift for her" expands discoverability.'
+      });
+    }
+
+    // Check 6: Natural readability vs. keyword-dump
+    if (totalSeparators <= 3) {
+      structureList.push({
+        title: 'Natural Readability',
+        status: 'pass',
+        pts: 8,
+        maxPts: 8,
+        desc: 'Title flows smoothly as a coherent descriptive phrase rather than an arbitrary comma-separated keyword dump.'
+      });
+    } else if (totalSeparators <= 5) {
+      structureList.push({
+        title: 'Natural Readability',
+        status: 'warn',
+        pts: 4,
+        maxPts: 8,
+        desc: `Contains ${totalSeparators} commas or separators. While readable, titles structured as natural phrases tend to earn higher buyer click-through rates.`
+      });
+    } else {
+      structureList.push({
+        title: 'Natural Readability',
+        status: 'fail',
+        pts: 0,
+        maxPts: 8,
+        desc: `High separator density (${totalSeparators} commas/dividers). Etsy actively discourages keyword-stuffing; use fewer commas and more coherent phrasing.`
+      });
+    }
+
+    // Check 7: Redundant word repetition / synonym stacking
+    if (foundSynPairs.length === 0) {
+      structureList.push({
+        title: 'Redundant Word Repetition',
+        status: 'pass',
+        pts: 8,
+        maxPts: 8,
+        desc: 'No near-synonym stacking detected. Every word contributes distinct search value without clutter.'
+      });
+    } else if (foundSynPairs.length === 1) {
+      structureList.push({
+        title: 'Redundant Word Repetition',
+        status: 'warn',
+        pts: 4,
+        maxPts: 8,
+        desc: `Near-synonym cluster detected: "${foundSynPairs[0][0]}" and "${foundSynPairs[0][1]}". Keep only the strongest term to conserve character allowance.`
+      });
+    } else {
+      structureList.push({
+        title: 'Redundant Word Repetition',
+        status: 'fail',
+        pts: 0,
+        maxPts: 8,
+        desc: `Multiple synonym stacks detected (${foundSynPairs.map(p => p.join(' + ')).join(', ')}). This wastes character allowance and can look spammy.`
+      });
+    }
+
+    // Check 8: Front-loading of importance (filler opening check)
+    if (genericOpenerFound) {
+      structureList.push({
+        title: 'Opening Word Value',
+        status: 'fail',
+        pts: 0,
+        maxPts: 8,
+        desc: `Begins with promotional filler "${genericOpenerFound}". Buyers search for specific product types, not buzzwords. Lead with what you sell.`
+      });
+    } else if (mildOpenerFound) {
+      structureList.push({
+        title: 'Opening Word Value',
+        status: 'warn',
+        pts: 4,
+        maxPts: 8,
+        desc: `Begins with filler word "${mildOpenerFound}", slightly delaying your primary product keywords.`
+      });
+    } else {
+      structureList.push({
+        title: 'Opening Word Value',
+        status: 'pass',
+        pts: 8,
+        maxPts: 8,
+        desc: 'Directly opens with substantive product descriptors, prioritizing high-value characters right from the start.'
+      });
+    }
+
+    // Group 2: Technical Rule Checks (6 checks, 6 pts each = 36 pts)
+    const technicalList = [];
+
+    // Check 9: Character count
+    const charLen = rawTitle.length;
+    if (charLen >= 70 && charLen <= 140) {
+      technicalList.push({
+        title: 'Character Count',
+        status: 'pass',
+        pts: 6,
+        maxPts: 6,
+        desc: `Title is ${charLen} characters — within the ideal 70–140 range that utilizes Etsy's available search space.`
+      });
+    } else if (charLen < 70) {
+      technicalList.push({
+        title: 'Character Count',
+        status: 'warn',
+        pts: 3,
+        maxPts: 6,
+        desc: `Title is only ${charLen} characters. Etsy allows up to 140; you have space to add material, style, or recipient details.`
+      });
+    } else {
+      technicalList.push({
+        title: 'Character Count',
+        status: 'fail',
+        pts: 0,
+        maxPts: 6,
+        desc: `Title is ${charLen} characters, exceeding Etsy's strict 140-character maximum. Etsy will reject or truncate this title.`
+      });
+    }
+
+    // Check 10: Keyword front-loading position readout
+    if (earliestNounPos >= 0 && earliestNounPos <= 35) {
+      technicalList.push({
+        title: 'Keyword Position Readout',
+        status: 'pass',
+        pts: 6,
+        maxPts: 6,
+        desc: `Primary keyword starts at character index ${earliestNounPos}, safely before the mobile truncation cutoff.`
+      });
+    } else if (earliestNounPos > 35 && earliestNounPos <= 60) {
+      technicalList.push({
+        title: 'Keyword Position Readout',
+        status: 'warn',
+        pts: 3,
+        maxPts: 6,
+        desc: `Primary keyword starts at character index ${earliestNounPos}. It may be partially truncated in mobile search cards.`
+      });
+    } else {
+      technicalList.push({
+        title: 'Keyword Position Readout',
+        status: 'fail',
+        pts: 0,
+        maxPts: 6,
+        desc: `Primary keyword begins at character ${earliestNounPos >= 0 ? earliestNounPos : 'N/A'}. Mobile shoppers will not see what this product is.`
+      });
+    }
+
+    // Check 11: Duplicate word detection (exact verbatim repeats)
+    const ignoredWords = new Set(['and', 'for', 'the', 'with', 'from', 'into', 'that', 'your', 'this', 'you', 'are', 'in', 'of', 'to']);
+    const wordCounts = new Map();
+    words.forEach(w => {
+      if (w.length >= 3 && !ignoredWords.has(w)) {
+        wordCounts.set(w, (wordCounts.get(w) || 0) + 1);
+      }
+    });
+
+    const duplicateEntries = Array.from(wordCounts.entries())
+      .filter(([w, cnt]) => cnt > 1)
+      .map(([w, cnt]) => ({ word: w, count: cnt }));
+
+    if (duplicateEntries.length === 0) {
+      technicalList.push({
+        title: 'Duplicate Word Detection',
+        status: 'pass',
+        pts: 6,
+        maxPts: 6,
+        desc: 'All words in your title are unique. No wasted character slots on verbatim duplicate words.'
+      });
+    } else if (duplicateEntries.length === 1 && duplicateEntries[0].count === 2) {
+      technicalList.push({
+        title: 'Duplicate Word Detection',
+        status: 'warn',
+        pts: 3,
+        maxPts: 6,
+        desc: `The word "${duplicateEntries[0].word}" appears ${duplicateEntries[0].count} times. Repeating identical words does not increase search rank.`
+      });
+    } else {
+      const dupDetails = duplicateEntries.map(d => `"${d.word}" (x${d.count})`).join(', ');
+      technicalList.push({
+        title: 'Duplicate Word Detection',
+        status: 'fail',
+        pts: 0,
+        maxPts: 6,
+        desc: `Multiple duplicate words found: ${dupDetails}. Replace duplicates with fresh search terms.`
+      });
+    }
+
+    // Check 12: Keyword-to-tag alignment note (Static guidance)
+    technicalList.push({
+      title: 'Title-to-Tag Alignment',
+      status: 'pass',
+      pts: 6,
+      maxPts: 6,
+      desc: 'Etsy awards search relevance when words in your title also appear in your tags. Align your 13 tags using our <a href="/tag-generator/">Tag Generator</a>.'
+    });
+
+    // Check 13: Spam / keyword-stuffing indicators
+    const hasRepeatedPunct = /[!\?\*]{2,}|-{3,}/.test(rawTitle);
+    const allCapsWords = rawTitle.split(/\s+/).filter(w => w.length >= 4 && w === w.toUpperCase() && /[A-Z]/.test(w));
+
+    if (!hasRepeatedPunct && allCapsWords.length === 0) {
+      technicalList.push({
+        title: 'Spam Signals & Formatting',
+        status: 'pass',
+        pts: 6,
+        maxPts: 6,
+        desc: 'Clean formatting with natural casing and standard punctuation. No spam triggers detected.'
+      });
+    } else if (allCapsWords.length === 1 && !hasRepeatedPunct) {
+      technicalList.push({
+        title: 'Spam Signals & Formatting',
+        status: 'warn',
+        pts: 3,
+        maxPts: 6,
+        desc: `Contains an all-caps word ("${allCapsWords[0]}"). Standard title or sentence casing is preferred by Etsy algorithms.`
+      });
+    } else {
+      const details = [];
+      if (hasRepeatedPunct) details.push('repeated punctuation');
+      if (allCapsWords.length > 0) details.push(`ALL CAPS words (${allCapsWords.join(', ')})`);
+      technicalList.push({
+        title: 'Spam Signals & Formatting',
+        status: 'fail',
+        pts: 0,
+        maxPts: 6,
+        desc: `Detected potential spam triggers: ${details.join(' and ')}. Excessive punctuation and all-caps can trigger search scrutiny.`
+      });
+    }
+
+    // Check 14: Special character and emoji check
+    const specialChars = rawTitle.match(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}™®©★✿♥❤]/gu) || [];
+
+    if (specialChars.length === 0) {
+      technicalList.push({
+        title: 'Special Characters & Emojis',
+        status: 'pass',
+        pts: 6,
+        maxPts: 6,
+        desc: 'Uses clean, standard characters that render reliably across desktop and mobile devices.'
+      });
+    } else {
+      technicalList.push({
+        title: 'Special Characters & Emojis',
+        status: 'warn',
+        pts: 3,
+        maxPts: 6,
+        desc: `Detected special symbols or emojis (${specialChars.slice(0, 3).join(' ')}). These take up extra character space and may render unpredictably in search.`
+      });
+    }
+
+    // Calculate total score
+    const totalPts = structureList.reduce((acc, c) => acc + c.pts, 0) + technicalList.reduce((acc, c) => acc + c.pts, 0);
+
+    // Render checks
+    renderCheckList(structureChecks, structureList);
+    renderCheckList(technicalChecks, technicalList);
+
+    // Update Score Card
+    if (scoreNumber) scoreNumber.textContent = totalPts;
+
+    titleScoreCard.className = 'title-score-card';
+    if (totalPts >= 80) {
+      titleScoreCard.classList.add('score-excellent');
+      if (scoreLabel) scoreLabel.textContent = `${totalPts}/100 — Excellent`;
+      if (scoreBlurb) scoreBlurb.textContent = 'Outstanding listing title! Strong keyword placement, rich attribute coverage, and natural readability that buyers and algorithms favor.';
+    } else if (totalPts >= 60) {
+      titleScoreCard.classList.add('score-good');
+      if (scoreLabel) scoreLabel.textContent = `${totalPts}/100 — Good`;
+      if (scoreBlurb) scoreBlurb.textContent = 'Solid title that follows most best practices. A few targeted tweaks can push this into an exceptional, top-ranking title.';
+    } else if (totalPts >= 40) {
+      titleScoreCard.classList.add('score-fair');
+      if (scoreLabel) scoreLabel.textContent = `${totalPts}/100 — Fair`;
+      if (scoreBlurb) scoreBlurb.textContent = 'Decent foundation, but several key optimization opportunities are being missed. Addressing the warnings below will meaningfully improve search reach.';
+    } else {
+      titleScoreCard.classList.add('score-weak');
+      if (scoreLabel) scoreLabel.textContent = `${totalPts}/100 — Weak`;
+      if (scoreBlurb) scoreBlurb.textContent = 'This title has multiple issues that limit visibility or click-throughs. Review the failed checks below and try the suggested title.';
+    }
+
+    // Auto-Suggested Improved Title
+    if (totalPts >= 80) {
+      if (titleSuggestionCard) titleSuggestionCard.style.display = 'none';
+      if (titleCongratCard) titleCongratCard.style.display = 'flex';
+    } else {
+      if (titleCongratCard) titleCongratCard.style.display = 'none';
+      if (titleSuggestionCard) {
+        titleSuggestionCard.style.display = 'block';
+        const suggestion = buildImprovedTitleSuggestion(rawTitle, detectedNouns, detectedMaterials, detectedStyles, detectedRecipient);
+        if (suggestedTitle) suggestedTitle.textContent = suggestion;
+      }
+    }
+
+    // Reveal results container
+    if (titleResultsContainer) {
+      titleResultsContainer.style.display = 'flex';
+      titleResultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function capitalizeWords(str) {
+    return str.replace(/\b[a-z]/g, c => c.toUpperCase());
+  }
+
+  function buildImprovedTitleSuggestion(rawTitle, nouns, materials, styles, recipient) {
+    // Choose primary product noun
+    let primaryNoun = nouns.length > 0 ? nouns[0] : 'Item';
+
+    // Choose material
+    let primaryMat = materials.length > 0 ? materials[0] : '';
+    
+    // Choose style
+    let primaryStyle = styles.length > 0 ? styles[0] : 'Handmade';
+
+    // Find any measurement / variant snippet
+    const sizeMatch = rawTitle.match(/\b\d+(\.\d+)?\s*(oz|inch|inches|cm|mm|ml|x\d+)\b/i) || 
+                      rawTitle.match(/\b(small|medium|large|set of \d+)\b/i);
+    const sizeSnippet = sizeMatch ? sizeMatch[0] : '';
+
+    // Build segments
+    const segments = [];
+
+    // Segment 1: Front-loaded primary keyword phrase
+    if (primaryMat && primaryStyle) {
+      segments.push(`${capitalizeWords(primaryStyle)} ${capitalizeWords(primaryMat)} ${capitalizeWords(primaryNoun)}`);
+    } else if (primaryMat) {
+      segments.push(`Handmade ${capitalizeWords(primaryMat)} ${capitalizeWords(primaryNoun)}`);
+    } else if (primaryStyle) {
+      segments.push(`${capitalizeWords(primaryStyle)} ${capitalizeWords(primaryNoun)}`);
+    } else {
+      segments.push(`Handmade ${capitalizeWords(primaryNoun)}`);
+    }
+
+    // Segment 2: Secondary descriptive phrase / material / style placeholder
+    if (!primaryMat) {
+      segments.push('[Add Material, e.g. Ceramic or Wood]');
+    } else if (!styles.length) {
+      segments.push('[Add Style, e.g. Rustic or Minimalist]');
+    } else {
+      const secondaryNoun = nouns.find(n => n !== primaryNoun);
+      if (secondaryNoun) {
+        segments.push(`Artisan ${capitalizeWords(secondaryNoun)}`);
+      } else {
+        segments.push('Artisan Crafted');
+      }
+    }
+
+    // Segment 3: Recipient or occasion
+    if (recipient) {
+      segments.push(capitalizeWords(recipient));
+    } else {
+      segments.push('Cozy Gift for [Recipient or Occasion]');
+    }
+
+    // Segment 4: Size or variant
+    if (sizeSnippet) {
+      segments.push(sizeSnippet.toUpperCase());
+    }
+
+    let suggestion = segments.join(', ');
+
+    // Ensure it does not exceed 140 chars
+    if (suggestion.length > 140) {
+      segments.pop();
+      suggestion = segments.join(', ');
+    }
+
+    return suggestion;
+  }
 }
