@@ -1,9 +1,35 @@
 {
+  "cleanUrls": true,
   "redirects": [
-    { "source": "/index.html", "destination": "/", "permanent": true },
-    { "source": "/tag-generator/index.html", "destination": "/tag-generator/", "permanent": true },
-    { "source": "/about/index.html", "destination": "/about/", "permanent": true },
-    { "source": "/contact/index.html", "destination": "/contact/", "permanent": true },
-    { "source": "/privacy-policy/index.html", "destination": "/privacy-policy/", "permanent": true }
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/tag-generator/index.html",
+      "destination": "/tag-generator/",
+      "permanent": true
+    },
+    {
+      "source": "/title-checker/index.html",
+      "destination": "/title-checker/",
+      "permanent": true
+    },
+    {
+      "source": "/about/index.html",
+      "destination": "/about/",
+      "permanent": true
+    },
+    {
+      "source": "/contact/index.html",
+      "destination": "/contact/",
+      "permanent": true
+    },
+    {
+      "source": "/privacy-policy/index.html",
+      "destination": "/privacy-policy/",
+      "permanent": true
+    }
   ]
 }
