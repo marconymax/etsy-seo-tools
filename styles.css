@@ -940,18 +940,18 @@ p:last-child {
 
 .tag-chip.is-expanded {
   background-color: #EBF4EC;
-  border-color: #C0D8C3;
-  color: #244829;
+  border-color: #B5D4B8;
+  color: #1E4623;
 }
 
 .tag-chip.is-expanded:hover {
-  background-color: #E2EFE3;
+  background-color: #DFEFE0;
   border-color: var(--color-sage);
 }
 
 .tag-chip.is-expanded .tag-chip-chars {
-  background-color: rgba(46, 92, 53, 0.1);
-  color: #3F6744;
+  background-color: rgba(30, 70, 35, 0.12);
+  color: #1E4623;
 }
 
 .tag-chip.has-warning {
