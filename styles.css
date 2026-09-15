@@ -903,6 +903,170 @@ p:last-child {
   height: 14px;
 }
 
+/* --------------------------------------------------------------------------
+   Button Loading State & Spinner
+   -------------------------------------------------------------------------- */
+.btn.is-loading {
+  pointer-events: none;
+  opacity: 0.88;
+  cursor: wait;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: btn-spin 0.65s linear infinite;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   Tag Chip Styling: Soft Green Tint & Inline Warning Label
+   -------------------------------------------------------------------------- */
+.results-subtext {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 1.15rem;
+  line-height: 1.5;
+}
+
+.tag-chip.is-expanded {
+  background-color: #EBF4EC;
+  border-color: #C0D8C3;
+  color: #244829;
+}
+
+.tag-chip.is-expanded:hover {
+  background-color: #E2EFE3;
+  border-color: var(--color-sage);
+}
+
+.tag-chip.is-expanded .tag-chip-chars {
+  background-color: rgba(46, 92, 53, 0.1);
+  color: #3F6744;
+}
+
+.tag-chip.has-warning {
+  border-color: #FEB2B2;
+  border-left: 4px solid #D9381E;
+  background-color: #FFF5F5;
+}
+
+.tag-chip-warn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #9B2C2C;
+  background-color: #FED7D7;
+  padding: 0.12rem 0.45rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Character & Slot Budget Widget
+   -------------------------------------------------------------------------- */
+.budget-widget {
+  background-color: var(--bg-surface-alt);
+  border: 1px solid var(--color-sand);
+  border-radius: var(--radius-lg);
+  padding: 1.15rem 1.35rem;
+  margin-bottom: 1.35rem;
+}
+
+.budget-widget-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.budget-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .budget-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+}
+
+.budget-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.budget-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.budget-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.budget-value {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.budget-track {
+  height: 7px;
+  background-color: var(--color-sand);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.budget-fill {
+  height: 100%;
+  background-color: var(--color-terracotta);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.budget-fill.is-optimal {
+  background-color: var(--color-sage);
+}
+
+.budget-prompt-box {
+  margin-top: 1rem;
+  padding: 0.65rem 0.95rem;
+  background-color: #FFFDF7;
+  border: 1px dashed var(--color-terracotta-border);
+  border-radius: var(--radius-md);
+  font-size: 0.84rem;
+  color: var(--color-terracotta-hover);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.4;
+}
+
+.budget-prompt-box svg {
+  flex-shrink: 0;
+  color: var(--color-terracotta);
+}
+
 /* Custom Add Tag Bar */
 .add-custom-tag-bar {
   display: flex;
