@@ -1,6 +1,6 @@
 /**
  * Etsy SEO Tools - Shared JavaScript & Tag Generator Engine
- * Zero external dependencies except optional Datamuse API (no key required)
+ * Zero external dependencies - 100% Client-side execution with Datamuse semantic expansion
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -91,25 +91,25 @@ function initCopyEmail() {
 }
 
 /* ==========================================================================
-   Etsy Tag Generator Engine
+   Etsy Tag Generator Engine (Upgraded Selection & Ranking)
    ========================================================================== */
 function initTagGenerator() {
-  const listingInput   = document.getElementById('listingInput');
-  const generateBtn    = document.getElementById('generateTagsBtn');
-  const clearBtn       = document.getElementById('clearInputBtn');
-  const sampleBtn      = document.getElementById('sampleListingBtn');
+  const listingInput     = document.getElementById('listingInput');
+  const generateBtn      = document.getElementById('generateTagsBtn');
+  const clearBtn         = document.getElementById('clearInputBtn');
+  const sampleBtn        = document.getElementById('sampleListingBtn');
   const resultsContainer = document.getElementById('resultsContainer');
-  const tagsWrapper    = document.getElementById('tagChipsWrapper');
-  const copyAllBtn     = document.getElementById('copyAllTagsBtn');
-  const tagCountBadge  = document.getElementById('tagCountBadge');
-  const charCount      = document.getElementById('charCount');
-  const wordCount      = document.getElementById('wordCount');
-  const customTagInput = document.getElementById('customTagInput');
-  const addCustomTagBtn = document.getElementById('addCustomTagBtn');
+  const tagsWrapper      = document.getElementById('tagChipsWrapper');
+  const copyAllBtn       = document.getElementById('copyAllTagsBtn');
+  const tagCountBadge    = document.getElementById('tagCountBadge');
+  const charCount        = document.getElementById('charCount');
+  const wordCount        = document.getElementById('wordCount');
+  const customTagInput   = document.getElementById('customTagInput');
+  const addCustomTagBtn  = document.getElementById('addCustomTagBtn');
 
   if (!listingInput || !generateBtn) return;
 
-  // Each entry: { text: string, expanded: boolean }
+  // Active tags in memory: array of { text, expanded }
   let currentTags = [];
 
   // Update live character/word counters
@@ -150,7 +150,7 @@ Features:
     });
   }
 
-  // Generate action (async — calls Datamuse)
+  // Generate action (async with Datamuse enrichment)
   generateBtn.addEventListener('click', generateTags);
 
   async function generateTags() {
@@ -161,132 +161,55 @@ Features:
       return;
     }
 
-    // Show loading state on button
+    // Loading indicator on button
     const btnOriginalHTML = generateBtn.innerHTML;
-    generateBtn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span> Analysing…`;
+    generateBtn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span> Analysing...`;
     generateBtn.classList.add('is-loading');
 
-    // Step 1: Run the synchronous n-gram extraction
-    const ngrams = extractEtsyTags(text);
-
-    // Step 2: Try to enrich with Datamuse related words
-    let expandedTags = ngrams;
     try {
-      expandedTags = await enrichWithDatamuse(text, ngrams);
-    } catch (e) {
-      // Silently fall back to n-gram only
+      // Step 1: Extract high-quality multi-word candidate tags from text
+      const textCandidates = extractNaturalTextCandidates(text);
+
+      // Step 2: Fetch related words from Datamuse API (with 3-second timeout)
+      let apiCandidates = [];
+      try {
+        apiCandidates = await fetchDatamuseCombinations(text);
+      } catch (e) {
+        // Silently fall back to text candidates
+      }
+
+      // Step 3: Get Category Diversity candidates (gift/occasion, recipient, use-case)
+      const diversityCandidates = extractDiversityCandidates(text);
+
+      // Step 4: Pool all candidates & rank by score
+      const allCandidates = poolAndRankCandidates([
+        ...textCandidates,
+        ...apiCandidates,
+        ...diversityCandidates
+      ]);
+
+      // Step 5: Select top 13 tags using concept clustering & category balance
+      currentTags = selectTopDiverseTags(allCandidates, text);
+
+    } catch (err) {
+      console.error('Tag generation error:', err);
+      showToast('Error generating tags. Please try again.');
+    } finally {
+      generateBtn.innerHTML = btnOriginalHTML;
+      generateBtn.classList.remove('is-loading');
     }
-
-    // Deduplicate near-synonymous tags (e.g. "coffee mug" vs "mug coffee")
-    expandedTags = deduplicateTags(expandedTags);
-
-    // Convert to tag objects { text, expanded }
-    const ngSet = new Set(ngrams);
-    currentTags = expandedTags.slice(0, 13).map(t => ({
-      text: t,
-      expanded: !ngSet.has(t)
-    }));
-
-    // Restore button
-    generateBtn.innerHTML = btnOriginalHTML;
-    generateBtn.classList.remove('is-loading');
 
     if (resultsContainer) resultsContainer.classList.add('visible');
     renderTags();
     resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    showToast(`Generated ${currentTags.length} Etsy tags!`);
+    showToast(`Generated ${currentTags.length} diverse Etsy tags!`);
   }
 
   /* -------------------------------------------------------------------------
-     Datamuse API enrichment
-     --------------------------------------------------------------------- */
-  async function enrichWithDatamuse(rawText, ngrams) {
-    // Pick the 3–5 highest-scoring non-stop single-word terms from n-gram text
-    const topWords = extractTopKeywords(rawText, 5);
-
-    if (topWords.length === 0) return ngrams;
-
-    // Fetch related words for each top keyword in parallel (with 3s timeout)
-    const fetchRelated = async (word) => {
-      const controller = new AbortController();
-      const tid = setTimeout(() => controller.abort(), 3000);
-      try {
-        const resp = await fetch(
-          `https://api.datamuse.com/words?ml=${encodeURIComponent(word)}&max=12`,
-          { signal: controller.signal }
-        );
-        clearTimeout(tid);
-        if (!resp.ok) return [];
-        const data = await resp.json();
-        // Return words with score > threshold, excluding the source word
-        return data
-          .filter(d => d.score > 900 && d.word !== word && d.word.length >= 3)
-          .map(d => d.word);
-      } catch {
-        clearTimeout(tid);
-        return [];
-      }
-    };
-
-    const results = await Promise.allSettled(topWords.map(fetchRelated));
-    const relatedWords = new Set();
-    results.forEach(r => {
-      if (r.status === 'fulfilled') r.value.forEach(w => relatedWords.add(w));
-    });
-
-    if (relatedWords.size === 0) return ngrams;
-
-    // Build bonus phrases: combine related words with the top original keywords
-    const bonusPhrases = [];
-    const STOP_WORDS_SET = getStopWordsSet();
-
-    for (const rel of relatedWords) {
-      if (rel.length > 20 || STOP_WORDS_SET.has(rel)) continue;
-
-      // Standalone related word as a tag (if short enough & not a stop word)
-      if (rel.length <= 20) bonusPhrases.push(rel);
-
-      // Combine related word with each top original keyword
-      for (const kw of topWords) {
-        const combo1 = `${rel} ${kw}`;
-        const combo2 = `${kw} ${rel}`;
-        if (combo1.length <= 20) bonusPhrases.push(combo1);
-        if (combo2.length <= 20 && combo2 !== combo1) bonusPhrases.push(combo2);
-      }
-    }
-
-    // Merge: original n-grams first (they're grounded in user's text),
-    // then fill remaining slots with Datamuse-expanded phrases
-    const merged = [...ngrams];
-    const existingNorm = new Set(ngrams.map(normalizeForDedupe));
-
-    for (const bp of bonusPhrases) {
-      if (merged.length >= 20) break; // build a larger pool, slice to 13 later
-      const norm = normalizeForDedupe(bp);
-      if (!existingNorm.has(norm) && bp.length <= 20 && bp.length >= 3) {
-        merged.push(bp);
-        existingNorm.add(norm);
-      }
-    }
-
-    return merged;
-  }
-
-  /* -------------------------------------------------------------------------
-     Near-duplicate deduplication
-     --------------------------------------------------------------------- */
-  function deduplicateTags(tags) {
-    const seen = new Set();
-    return tags.filter(tag => {
-      const norm = normalizeForDedupe(tag);
-      if (seen.has(norm)) return false;
-      seen.add(norm);
-      return true;
-    });
-  }
-
-  /* -------------------------------------------------------------------------
-     Render tag chips with compliance flags & budget widget
+     Render tag chips (Simplified UI per Problem 5)
+     - Expanded tags: subtle soft-green background tint
+     - Trademark warnings: red left border + inline text label '⚠ trademark risk'
+     - No mysterious symbol icons, no confusing chip legend
      --------------------------------------------------------------------- */
   function renderTags() {
     if (!tagsWrapper) return;
@@ -296,51 +219,22 @@ Features:
       tagsWrapper.innerHTML = `<p style="color: var(--text-light); font-style: italic; width: 100%;">No tags yet. Generate from a listing or add one below.</p>`;
     } else {
       currentTags.forEach(({ text, expanded }, index) => {
-        const warnings = validateTag(text);
-        const hasWarning = warnings.some(w => w.type === 'warning');
-        const isSingle   = !text.includes(' ');
+        const warning = checkTrademarkRisk(text);
 
         const chip = document.createElement('div');
         chip.className = 'tag-chip';
-        if (hasWarning) chip.classList.add('has-warning');
         if (expanded) chip.classList.add('is-expanded');
+        if (warning) chip.classList.add('has-warning');
 
-        // Build badge HTML
-        let badgesHTML = '';
-
-        if (hasWarning) {
-          const warnMsg = warnings.filter(w => w.type === 'warning').map(w => w.msg).join(' | ');
-          badgesHTML += `
-            <span class="tag-chip-badge badge-warning tooltip-trigger" tabindex="0" role="img" aria-label="Warning: ${escapeHtml(warnMsg)}">
-              ⚠
-              <span class="tooltip-text">${escapeHtml(warnMsg)}</span>
-            </span>`;
-        }
-
-        if (isSingle && !hasWarning) {
-          const info = warnings.find(w => w.type === 'info');
-          const tip = info ? info.msg : 'Multi-word phrases typically rank higher on Etsy.';
-          badgesHTML += `
-            <span class="tag-chip-badge badge-single tooltip-trigger" tabindex="0" role="img" aria-label="${escapeHtml(tip)}">
-              1W
-              <span class="tooltip-text">${escapeHtml(tip)}</span>
-            </span>`;
-        }
-
-        if (expanded && !hasWarning && !isSingle) {
-          badgesHTML += `
-            <span class="tag-chip-badge badge-expanded tooltip-trigger" tabindex="0" role="img" aria-label="Suggested by Datamuse linguistic analysis — not from your input text">
-              +
-              <span class="tooltip-text">Expanded: suggested via linguistic analysis, not directly from your listing copy.</span>
-            </span>`;
+        let warningLabelHTML = '';
+        if (warning) {
+          warningLabelHTML = `<span class="tag-chip-warn-label">⚠ trademark risk</span>`;
         }
 
         chip.innerHTML = `
           <span>${escapeHtml(text)}</span>
-          <span class="tag-chip-meta">
-            <span class="tag-chip-chars">${text.length}/20</span>
-            ${badgesHTML}
-          </span>
+          ${warningLabelHTML}
+          <span class="tag-chip-chars">${text.length}/20</span>
           <button type="button" class="tag-chip-remove" aria-label="Remove tag ${escapeHtml(text)}" data-index="${index}">
             <svg viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
@@ -351,7 +245,7 @@ Features:
       });
     }
 
-    // Attach remove listeners
+    // Attach chip remove listeners
     tagsWrapper.querySelectorAll('.tag-chip-remove').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const idx = parseInt(e.currentTarget.getAttribute('data-index'), 10);
@@ -379,9 +273,6 @@ Features:
     }
   }
 
-  /* -------------------------------------------------------------------------
-     Budget Widget (slot count + character budget)
-     --------------------------------------------------------------------- */
   function renderBudgetWidget() {
     let widget = document.getElementById('tagBudgetWidget');
     if (!widget) {
@@ -403,14 +294,14 @@ Features:
       promptHTML = `
         <div class="budget-prompt-box">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-          <span>You have <strong>${slotsLeft} tag slot${slotsLeft > 1 ? 's' : ''} left</strong> — try adding more detail to your listing description for additional suggestions, or add a custom tag below.</span>
+          <span>You have <strong>${slotsLeft} tag slot${slotsLeft > 1 ? 's' : ''} left</strong> — try adding more detail to your listing description for additional suggestions, or add custom tags below.</span>
         </div>`;
     }
 
     widget.innerHTML = `
       <div class="budget-widget-title">
         <span>Tag Budget</span>
-        <span style="font-weight:400; font-size:0.8rem; color: var(--text-light);">13 slots × 20 chars = 260 char budget</span>
+        <span style="font-weight:400; font-size:0.8rem; color: var(--text-light);">13 slots × 20 chars = 260 character budget</span>
       </div>
       <div class="budget-grid">
         <div class="budget-item">
@@ -424,7 +315,7 @@ Features:
         </div>
         <div class="budget-item">
           <div class="budget-item-header">
-            <span class="budget-label">Chars Used</span>
+            <span class="budget-label">Characters Used</span>
             <span class="budget-value">${totalChars} / 260</span>
           </div>
           <div class="budget-track" role="progressbar" aria-valuenow="${totalChars}" aria-valuemin="0" aria-valuemax="260" aria-label="${totalChars} of 260 characters used">
@@ -471,7 +362,7 @@ Features:
         showToast('Etsy allows a maximum of 13 tags per listing.');
         return;
       }
-      if (currentTags.find(t => t.text === customTag)) {
+      if (currentTags.some(t => t.text === customTag)) {
         showToast('This tag is already in your list.');
         return;
       }
@@ -490,7 +381,7 @@ Features:
 }
 
 /* ==========================================================================
-   Etsy Compliance Validator
+   Etsy Compliance Trademark List
    ========================================================================== */
 const TRADEMARK_TERMS = [
   'disney', 'marvel', 'star wars', 'harry potter', 'pokemon', 'pikachu',
@@ -499,190 +390,413 @@ const TRADEMARK_TERMS = [
   'apple', 'iphone', 'starbucks', 'stanley cup', 'taylor swift', 'swiftie',
   'nfl', 'nba', 'mlb', 'nhl', 'super bowl', 'band-aid', 'velcro', 'onesie',
   'cricut', 'minnie', 'mickey', 'winnie the pooh', 'spongebob', 'rick and morty',
-  'stranger things', 'hogwarts', 'hufflepuff', 'gryffindor',
+  'stranger things', 'hogwarts', 'hufflepuff', 'gryffindor', 'slytherin', 'ravenclaw'
 ];
 
-function validateTag(tag) {
-  const results = [];
+function checkTrademarkRisk(tag) {
   const lower = tag.toLowerCase();
-
-  // IP/trademark warning
   for (const tm of TRADEMARK_TERMS) {
     const pattern = new RegExp('\\b' + tm.replace(/ /g, '\\s+') + '\\b');
     if (pattern.test(lower)) {
-      results.push({ type: 'warning', msg: `May violate Etsy's IP policy — contains "${tm}"` });
-      break;
+      return tm;
+    }
+  }
+  return null;
+}
+
+/* ==========================================================================
+   Core Dictionaries for Natural Phrase Validation & Diversity
+   ========================================================================== */
+const STOP_WORDS = new Set([
+  'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are',
+  "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both',
+  'but', 'by', 'can', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does',
+  "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further',
+  'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll",
+  "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's",
+  'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's",
+  'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor',
+  'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves',
+  'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should',
+  "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs',
+  'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll",
+  "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up',
+  'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't",
+  'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's",
+  'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll",
+  "you're", "you've", 'your', 'yours', 'yourself', 'yourselves',
+  'item', 'items', 'listing', 'product', 'shop', 'order', 'orders', 'size', 'sizes', 'approx',
+  'approximately', 'including', 'includes', 'please', 'note', 'check', 'contact', 'us', 'new',
+  'free', 'shipping', 'available', 'visit', 'made', 'handmade', 'looking', 'perfect', 'holds',
+  'resulting', 'features', 'feel', 'feels', 'great'
+]);
+
+// Product and object nouns that buyers search for
+const PRODUCT_NOUNS = new Set([
+  'mug', 'mugs', 'cup', 'cups', 'pottery', 'dish', 'dishes', 'bowl', 'bowls', 'plate', 'plates',
+  'vase', 'vases', 'planter', 'planters', 'pot', 'pots', 'crock', 'saucer', 'tumbler', 'tumblers',
+  'glass', 'glasses', 'jar', 'jars', 'bottle', 'bottles', 'pitcher', 'carafe',
+  'ring', 'rings', 'necklace', 'necklaces', 'earring', 'earrings', 'bracelet', 'bracelets',
+  'pendant', 'pendants', 'jewelry', 'brooch', 'cuff', 'anklet', 'charm', 'charms',
+  'shirt', 'tshirt', 'tee', 'hoodie', 'sweater', 'sweatshirt', 'dress', 'top', 'tote', 'bag',
+  'purse', 'wallet', 'backpack', 'pouch', 'clutch',
+  'print', 'prints', 'art', 'poster', 'posters', 'painting', 'canvas', 'sign', 'signs', 'decor',
+  'candle', 'candles', 'wax', 'soap', 'soaps', 'balm', 'lotion', 'salve',
+  'pillow', 'cushion', 'blanket', 'quilt', 'throw', 'rug', 'mat', 'curtain', 'towel',
+  'card', 'cards', 'invitation', 'planner', 'journal', 'notebook', 'sticker', 'stickers',
+  'gift', 'gifts', 'favor', 'favors', 'box', 'boxes', 'set', 'sets', 'kit', 'kits',
+  'holder', 'coaster', 'coasters', 'stand', 'tray', 'basket', 'shelf', 'hanger',
+  'ornament', 'ornaments', 'figurine', 'statue', 'sculpture', 'keychain', 'badge',
+  'espresso', 'coffee', 'tea', 'matcha', 'drinkware', 'ceramics', 'glaze', 'clay',
+  'ritual', 'handle', 'decor'
+]);
+
+// Descriptive materials and style adjectives
+const MODIFIERS = new Set([
+  'ceramic', 'stoneware', 'earthenware', 'porcelain', 'clay', 'terracotta',
+  'wood', 'wooden', 'leather', 'linen', 'cotton', 'wool', 'silk', 'velvet', 'metal', 'brass',
+  'copper', 'gold', 'silver', 'bronze', 'resin', 'enamel', 'acrylic', 'rattan',
+  'rustic', 'speckled', 'handmade', 'handthrown', 'wheelthrown', 'artisan', 'craft',
+  'vintage', 'retro', 'antique', 'boho', 'bohemian', 'minimalist', 'modern', 'farmhouse',
+  'aesthetic', 'cozy', 'dainty', 'chunky', 'delicate', 'textured', 'glazed', 'matte',
+  'glossy', 'raw', 'natural', 'organic', 'white', 'black', 'brown', 'green', 'blue',
+  'pink', 'neutral', 'earthy', 'pastel', 'warm', 'custom', 'personalized', 'handcrafted',
+  'durable', 'unique'
+]);
+
+// Words that should never be in a search tag (passive verbs, measurements, filler)
+const NON_SEARCH_WORDS = new Set([
+  'is', 'are', 'was', 'were', 'crafted', 'shaped', 'finished', 'feels', 'feel', 'holds',
+  'approximately', 'approx', 'batches', 'batch', 'safe', 'resulting', 'piece', 'pieces',
+  'looking', 'great', 'perfect', 'unique', 'handles', 'handle', 'wheel', 'features',
+  'items', 'item', 'listing', 'available', 'order', 'orders', 'contact', 'oz', 'ounce',
+  'ounces', 'inch', 'inches', 'cm', 'mm', 'ml', 'lbs', 'lb', 'gram', 'grams'
+]);
+
+// Category Diversity Library (Problem 4)
+const DIVERSITY_LIBRARIES = [
+  {
+    category: 'drinkware',
+    triggers: ['mug', 'mugs', 'cup', 'cups', 'coffee', 'tea', 'espresso', 'tumbler', 'drinkware', 'latte', 'chai', 'matcha'],
+    giftOccasions: ['housewarming gift', 'birthday gift', 'holiday gift', 'cozy gift', 'anniversary gift'],
+    recipients: ['coffee lover gift', 'tea lover gift', 'gift for coworker', 'gift for mom', 'gift for bestie'],
+    useCases: ['coffee bar decor', 'kitchen decor', 'office desk mug', 'morning coffee ritual', 'cozy kitchen decor']
+  },
+  {
+    category: 'jewelry',
+    triggers: ['ring', 'necklace', 'earring', 'earrings', 'bracelet', 'pendant', 'jewelry', 'gemstone', 'choker'],
+    giftOccasions: ['anniversary gift', 'birthday gift', 'bridesmaid gift', 'valentines gift', 'graduation gift'],
+    recipients: ['gift for best friend', 'gift for girlfriend', 'gift for wife', 'gift for sister', 'gift for mom'],
+    useCases: ['everyday jewelry', 'dainty jewelry', 'bridal jewelry', 'stacking jewelry', 'statement jewelry']
+  },
+  {
+    category: 'homedecor',
+    triggers: ['decor', 'print', 'prints', 'art', 'poster', 'wall', 'painting', 'pillow', 'blanket', 'vase', 'candle', 'sign', 'shelf'],
+    giftOccasions: ['housewarming gift', 'new home gift', 'hostess gift', 'wedding gift', 'closing gift'],
+    recipients: ['gift for couple', 'gift for homeowner', 'gift for mom', 'gift for friend', 'gift for family'],
+    useCases: ['living room decor', 'entryway decor', 'gallery wall art', 'cozy home accent', 'office wall decor', 'shelf decor accent']
+  },
+  {
+    category: 'apparel',
+    triggers: ['shirt', 'tshirt', 'tee', 'hoodie', 'sweater', 'sweatshirt', 'jacket', 'tote', 'bag', 'dress'],
+    giftOccasions: ['birthday gift', 'christmas gift', 'bachelorette party', 'holiday gift'],
+    recipients: ['gift for bestie', 'gift for her', 'gift for him', 'gift for friend', 'gift for sister'],
+    useCases: ['casual streetwear', 'everyday outfit', 'graphic tee aesthetic', 'comfy loungewear', 'oversized aesthetic']
+  },
+  {
+    category: 'stationery',
+    triggers: ['card', 'cards', 'invitation', 'planner', 'journal', 'notebook', 'sticker', 'stickers', 'stationery'],
+    giftOccasions: ['birthday greeting', 'wedding stationery', 'thank you card', 'holiday greeting'],
+    recipients: ['gift for reader', 'gift for writer', 'gift for coworker', 'gift for student'],
+    useCases: ['desk accessory', 'bullet journal decor', 'snail mail love', 'planner supplies', 'office stationery']
+  }
+];
+
+/* ==========================================================================
+   Grammatical Naturalness Checker (Problem 3)
+   ========================================================================== */
+function isNaturalPhrase(phrase) {
+  if (!phrase || phrase.length > 20 || phrase.length < 4) return False_safe();
+  const words = phrase.toLowerCase().trim().split(/\s+/);
+  if (words.length < 2) return False_safe();
+
+  // Multi-word phrase must not start or end with a stop word
+  if (STOP_WORDS.has(words[0]) || STOP_WORDS.has(words[words.length - 1])) {
+    return false;
+  }
+
+  // Reject phrases with descriptive verbs, measurements, or non-search fillers
+  for (const w of words) {
+    if (NON_SEARCH_WORDS.has(w)) return false;
+  }
+
+  // Must contain at least one noun or search object
+  const hasNoun = words.some(w => PRODUCT_NOUNS.has(w));
+  if (!hasNoun) return false;
+
+  // Discard modifier + modifier combinations (e.g., 'earthenware ceramic', 'rustic stoneware')
+  if (words.length === 2 && MODIFIERS.has(words[0]) && MODIFIERS.has(words[1])) {
+    return false;
+  }
+
+  // The last word should not be an awkward adjective
+  const awkwardEnds = ['rustic', 'speckled', 'ceramic', 'stoneware', 'durable', 'unique', 'small', 'organic', 'handmade', 'earthenware'];
+  if (awkwardEnds.includes(words[words.length - 1])) {
+    return false;
+  }
+
+  return true;
+}
+
+function False_safe() { return false; }
+
+/* ==========================================================================
+   Core Concept Cluster Redundancy Checker (Problem 2)
+   Detects if two tags share 2+ core content words (e.g. ceramic + coffee)
+   ========================================================================== */
+function getContentWords(phrase) {
+  const connectors = new Set(['for', 'and', 'with', 'the', 'in', 'of', 'to', 'a', 'by', 'on']);
+  return new Set(
+    phrase.toLowerCase().split(/\s+/)
+      .filter(w => !STOP_WORDS.has(w) && !connectors.has(w) && w.length >= 3)
+  );
+}
+
+function sharesCoreConcept(phrase, existingList) {
+  const cw = getContentWords(phrase);
+  if (cw.size < 2) return false;
+
+  for (const item of existingList) {
+    const existingCw = getContentWords(item.text);
+    let overlapCount = 0;
+    for (const w of cw) {
+      if (existingCw.has(w)) overlapCount++;
+    }
+    // If 2 or more core content words overlap, it's the same core concept!
+    if (overlapCount >= 2) return true;
+  }
+  return false;
+}
+
+/* ==========================================================================
+   Candidate Extractors
+   ========================================================================== */
+function splitIntoClauses(text) {
+  // Split on punctuation so n-grams never cross sentences or clauses
+  const rawClauses = text.split(/[\r\n.!?–—&|,;:()[\]•*#<>]+/);
+  const clauses = [];
+  for (const c of rawClauses) {
+    const clean = c.trim().toLowerCase();
+    if (clean.length >= 3) {
+      const tokens = clean.split(/\s+/)
+        .map(t => t.replace(/^[^\w]+|[^\w]+$/g, ''))
+        .filter(t => t.length >= 2 && !/^\d+$/.test(t));
+      if (tokens.length >= 2) clauses.push(tokens);
+    }
+  }
+  return clauses;
+}
+
+function extractNaturalTextCandidates(rawText) {
+  const clauses = splitIntoClauses(rawText);
+  const titleTokens = new Set(clauses.length > 0 ? clauses[0] : []);
+  const candidates = [];
+
+  for (const clause of clauses) {
+    // 2-word phrases (Bigrams)
+    for (let i = 0; i < clause.length - 1; i++) {
+      const phrase = `${clause[i]} ${clause[i+1]}`;
+      if (isNaturalPhrase(phrase)) {
+        let score = 4.0;
+        if (titleTokens.has(clause[i]) || titleTokens.has(clause[i+1])) score *= 2.2;
+        candidates.push({ text: phrase, score, category: 'descriptor', expanded: false });
+      }
+    }
+
+    // 3-word phrases (Trigrams)
+    for (let i = 0; i < clause.length - 2; i++) {
+      const phrase = `${clause[i]} ${clause[i+1]} ${clause[i+2]}`;
+      if (isNaturalPhrase(phrase)) {
+        let score = 5.5;
+        if (clause.slice(i, i+3).some(w => titleTokens.has(w))) score *= 2.2;
+        candidates.push({ text: phrase, score, category: 'descriptor', expanded: false });
+      }
     }
   }
 
-  // ALL CAPS warning
-  if (/^[A-Z\s]{2,}$/.test(tag) && tag.trim().length > 2) {
-    results.push({ type: 'warning', msg: 'ALL CAPS: Use lowercase for Etsy consistency (tags are case-insensitive for search).' });
-  }
-
-  // Single-word nudge (info, not warning)
-  if (!tag.includes(' ') && results.length === 0) {
-    results.push({ type: 'info', msg: 'Single-word tag: multi-word phrases usually rank higher on Etsy.' });
-  }
-
-  return results;
+  return candidates;
 }
 
-/* ==========================================================================
-   Normalise phrase for near-duplicate detection
-   "mug coffee" → same key as "coffee mug"
-   ========================================================================== */
-function normalizeForDedupe(phrase) {
-  return phrase.trim().toLowerCase().split(/\s+/).sort().join(' ');
-}
-
-/* ==========================================================================
-   Keyword & N-Gram Extraction Algorithm for Etsy
-   ========================================================================== */
-function getStopWordsSet() {
-  return new Set([
-    'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are',
-    "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both',
-    'but', 'by', 'can', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does',
-    "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further',
-    'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll",
-    "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's",
-    'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's",
-    'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor',
-    'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves',
-    'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should',
-    "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs',
-    'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll",
-    "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up',
-    'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't",
-    'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's",
-    'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll",
-    "you're", "you've", 'your', 'yours', 'yourself', 'yourselves',
-    'item', 'items', 'listing', 'product', 'shop', 'order', 'orders', 'size', 'sizes', 'approx',
-    'approximately', 'including', 'includes', 'please', 'note', 'check', 'contact', 'us', 'new',
-    'free', 'shipping', 'available', 'visit', 'made', 'handmade', 'looking', 'perfect',
-  ]);
-}
-
-function extractTopKeywords(rawText, maxWords) {
-  const STOP_WORDS = getStopWordsSet();
-  const INTENT_BOOSTERS = new Set([
-    'gift', 'decor', 'art', 'print', 'mug', 'cup', 'shirt', 'ring', 'necklace', 'pottery',
-    'ceramic', 'wood', 'leather', 'custom', 'personalized', 'vintage', 'rustic', 'boho',
-    'minimalist', 'aesthetic', 'birthday', 'wedding', 'anniversary', 'cozy',
-  ]);
-
-  const tokens = tokenize(rawText);
+/* --------------------------------------------------------------------------
+   Datamuse API Expansion with Grammatical Naturalness Check (Problem 1 & 3)
+   -------------------------------------------------------------------------- */
+async function fetchDatamuseCombinations(rawText) {
+  const tokens = rawText.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(t => t.length >= 4 && !STOP_WORDS.has(t));
   const freq = new Map();
-  tokens.forEach(t => {
-    if (!STOP_WORDS.has(t) && t.length >= 4) {
-      freq.set(t, (freq.get(t) || 0) + (INTENT_BOOSTERS.has(t) ? 3 : 1));
+  tokens.forEach(t => freq.set(t, (freq.get(t) || 0) + 1));
+  const topWords = Array.from(freq.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4).map(e => e[0]);
+
+  if (topWords.length === 0) return [];
+
+  // Extract core product noun phrases from listing to attach related words to
+  const nounPhrases = new Set();
+  const clauses = splitIntoClauses(rawText);
+  for (const cl of clauses) {
+    for (let i = 0; i < cl.length; i++) {
+      if (PRODUCT_NOUNS.has(cl[i])) {
+        nounPhrases.add(cl[i]);
+        if (i > 0 && !STOP_WORDS.has(cl[i-1])) nounPhrases.add(`${cl[i-1]} ${cl[i]}`);
+        if (i < cl.length - 1 && PRODUCT_NOUNS.has(cl[i+1])) nounPhrases.add(`${cl[i]} ${cl[i+1]}`);
+      }
     }
+  }
+
+  const fetchRelated = async (word) => {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 3000);
+    try {
+      const resp = await fetch(
+        `https://api.datamuse.com/words?ml=${encodeURIComponent(word)}&max=8`,
+        { signal: controller.signal }
+      );
+      clearTimeout(tid);
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      return data
+        .filter(d => d.score > 1200 && d.word !== word && /^[a-z]+$/.test(d.word) && !STOP_WORDS.has(d.word))
+        .map(d => d.word);
+    } catch {
+      clearTimeout(tid);
+      return [];
+    }
+  };
+
+  const settled = await Promise.allSettled(topWords.map(fetchRelated));
+  const relatedWords = new Set();
+  settled.forEach(s => {
+    if (s.status === 'fulfilled') s.value.forEach(w => relatedWords.add(w));
   });
 
-  return Array.from(freq.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, maxWords)
-    .map(e => e[0]);
+  const candidates = [];
+  for (const rel of relatedWords) {
+    for (const np of nounPhrases) {
+      const combo = `${rel} ${np}`;
+      if (isNaturalPhrase(combo)) {
+        candidates.push({ text: combo, score: 6.2, category: 'descriptor', expanded: true });
+      }
+    }
+  }
+
+  return candidates;
 }
 
-function tokenize(str) {
-  return str
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, ' ')
-    .split(/[\s,–—\/]+/)
-    .map(w => w.trim().replace(/^[-_]+|[-_]+$/g, ''))
-    .filter(w => w.length >= 2 && !/^\d+$/.test(w));
+/* --------------------------------------------------------------------------
+   Category Diversity Library (Problem 4)
+   Adds gift/occasion, recipient, and use-case tags
+   -------------------------------------------------------------------------- */
+function extractDiversityCandidates(rawText) {
+  const lower = rawText.toLowerCase();
+  const candidates = [];
+
+  for (const lib of DIVERSITY_LIBRARIES) {
+    const matchesCategory = lib.triggers.some(trig => lower.includes(trig));
+    if (matchesCategory) {
+      // Occasion angles
+      for (const occ of lib.giftOccasions) {
+        if (isNaturalPhrase(occ)) {
+          candidates.push({ text: occ, score: 6.0, category: 'occasion', expanded: true });
+        }
+      }
+      // Recipient angles
+      for (const rec of lib.recipients) {
+        if (isNaturalPhrase(rec)) {
+          candidates.push({ text: rec, score: 5.6, category: 'recipient', expanded: true });
+        }
+      }
+      // Use-case angles
+      for (const uc of lib.useCases) {
+        if (isNaturalPhrase(uc)) {
+          candidates.push({ text: uc, score: 5.2, category: 'useCase', expanded: true });
+        }
+      }
+      break; // Match most specific category
+    }
+  }
+
+  return candidates;
 }
 
-function extractEtsyTags(rawText) {
-  const STOP_WORDS = getStopWordsSet();
-
-  const INTENT_BOOSTERS = new Set([
-    'gift', 'decor', 'art', 'print', 'mug', 'cup', 'shirt', 'ring', 'necklace', 'pottery',
-    'ceramic', 'wood', 'leather', 'custom', 'personalized', 'vintage', 'rustic', 'boho',
-    'minimalist', 'aesthetic', 'birthday', 'wedding', 'anniversary', 'cozy', 'handmade',
-  ]);
-
-  const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  const titleLine = lines.length > 0 ? lines[0] : '';
-
-  const allTokens  = tokenize(rawText);
-  const titleTokens = new Set(tokenize(titleLine));
-
-  const candidateScores = new Map();
-
-  function recordPhrase(phrase, isTitleBonus, wordCount) {
-    if (phrase.length > 20 || phrase.length < 3) return;
-
-    const words = phrase.split(' ');
-
-    if (words.length > 1) {
-      if (STOP_WORDS.has(words[0]) || STOP_WORDS.has(words[words.length - 1])) return;
-    } else {
-      if (STOP_WORDS.has(words[0])) return;
+/* --------------------------------------------------------------------------
+   Pool, Rank & Select Diverse Tags (Problem 1, 2, 4)
+   -------------------------------------------------------------------------- */
+function poolAndRankCandidates(allCandidates) {
+  // Deduplicate exact normalized strings, keeping highest score
+  const uniqueMap = new Map();
+  for (const c of allCandidates) {
+    const norm = c.text.toLowerCase().trim();
+    if (!uniqueMap.has(norm) || c.score > uniqueMap.get(norm).score) {
+      uniqueMap.set(norm, c);
     }
-
-    let score = 1.0;
-    if (wordCount === 2) score = 4.0;
-    if (wordCount === 3) score = 5.0;
-    if (wordCount === 1) score = 1.2;
-
-    if (isTitleBonus) score *= 2.5;
-
-    for (const w of words) {
-      if (INTENT_BOOSTERS.has(w)) score += 1.8;
-    }
-
-    candidateScores.set(phrase, (candidateScores.get(phrase) || 0) + score);
   }
+  return Array.from(uniqueMap.values()).sort((a, b) => b.score - a.score);
+}
 
-  // Bigrams
-  for (let i = 0; i < allTokens.length - 1; i++) {
-    const w1 = allTokens[i], w2 = allTokens[i + 1];
-    if (STOP_WORDS.has(w1) && STOP_WORDS.has(w2)) continue;
-    recordPhrase(`${w1} ${w2}`, titleTokens.has(w1) || titleTokens.has(w2), 2);
-  }
+function selectTopDiverseTags(rankedCandidates, rawText) {
+  const selected = [];
+  const categoryCounts = { descriptor: 0, occasion: 0, recipient: 0, useCase: 0 };
+  const MAX_PER_CAT    = { descriptor: 6, occasion: 3, recipient: 2, useCase: 3 };
 
-  // Trigrams
-  for (let i = 0; i < allTokens.length - 2; i++) {
-    const w1 = allTokens[i], w2 = allTokens[i + 1], w3 = allTokens[i + 2];
-    if (STOP_WORDS.has(w1) && STOP_WORDS.has(w2) && STOP_WORDS.has(w3)) continue;
-    recordPhrase(`${w1} ${w2} ${w3}`, titleTokens.has(w1) || titleTokens.has(w2) || titleTokens.has(w3), 3);
-  }
+  // Pass 1: Multi-word phrases with diversity limits & concept cluster deduplication
+  for (const c of rankedCandidates) {
+    if (selected.length >= 13) break;
+    const cat = c.category || 'descriptor';
+    if ((categoryCounts[cat] || 0) >= (MAX_PER_CAT[cat] || 3)) continue;
 
-  // Unigrams
-  for (const token of allTokens) {
-    if (!STOP_WORDS.has(token) && token.length >= 3) {
-      recordPhrase(token, titleTokens.has(token), 1);
+    if (!sharesCoreConcept(c.text, selected)) {
+      selected.push({ text: c.text, expanded: c.expanded });
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
     }
   }
 
-  const sortedCandidates = Array.from(candidateScores.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(e => e[0]);
-
-  const selectedTags = [];
-  for (const tag of sortedCandidates) {
-    if (selectedTags.length >= 13) break;
-    if (selectedTags.includes(tag)) continue;
-    const isSingle = !tag.includes(' ');
-    if (isSingle) {
-      const parentCount = selectedTags.filter(t => t.split(' ').includes(tag)).length;
-      if (parentCount >= 2 && selectedTags.length < 10) continue;
-    }
-    selectedTags.push(tag);
-  }
-
-  // Backfill
-  if (selectedTags.length < 13) {
-    for (const tag of sortedCandidates) {
-      if (selectedTags.length >= 13) break;
-      if (!selectedTags.includes(tag)) selectedTags.push(tag);
+  // Pass 2: Fill remaining slots with other natural multi-word candidates
+  if (selected.length < 13) {
+    for (const c of rankedCandidates) {
+      if (selected.length >= 13) break;
+      if (selected.some(s => s.text === c.text)) continue;
+      if (!sharesCoreConcept(c.text, selected)) {
+        selected.push({ text: c.text, expanded: c.expanded });
+      }
     }
   }
 
-  return selectedTags.slice(0, 13);
+  // Pass 3: Relaxed multi-word check if still under 13
+  if (selected.length < 13) {
+    for (const c of rankedCandidates) {
+      if (selected.length >= 13) break;
+      if (!selected.some(s => s.text === c.text)) {
+        selected.push({ text: c.text, expanded: c.expanded });
+      }
+    }
+  }
+
+  // Pass 4 (STRICT LAST RESORT - Problem 1):
+  // Single-word tags ONLY if all multi-word options are genuinely exhausted
+  if (selected.length < 13) {
+    const tokens = rawText.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/)
+      .filter(t => t.length >= 4 && !STOP_WORDS.has(t) && !NON_SEARCH_WORDS.has(t) && PRODUCT_NOUNS.has(t));
+    const tokenFreq = new Map();
+    tokens.forEach(t => tokenFreq.set(t, (tokenFreq.get(t) || 0) + 1));
+    const sortedSingles = Array.from(tokenFreq.entries()).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+
+    for (const single of sortedSingles) {
+      if (selected.length >= 13) break;
+      if (!selected.some(s => s.text === single || s.text.split(' ').includes(single))) {
+        selected.push({ text: single, expanded: false });
+      }
+    }
+  }
+
+  return selected.slice(0, 13);
 }
 
 function escapeHtml(str) {
