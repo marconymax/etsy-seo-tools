@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="monetag" content="79834cfa736b4c347a61caf7b8b644b2">
+  <script src="https://quge5.com/88/tag.min.js" data-zone="309341" async data-cfasync="false"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Etsy Title Checker — Free Listing Score Tool</title>
@@ -206,6 +208,40 @@
             <p id="scoreBlurb" class="score-blurb"></p>
           </div>
 
+          <!-- NEW: Interactive Mobile App SERP Preview -->
+          <div id="mobileSerpPreview" class="mobile-serp-preview">
+            <div class="mobile-preview-header">
+              <div class="mobile-preview-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                </svg>
+                <span>Etsy Mobile App Search Preview</span>
+              </div>
+              <span id="mobileVisibilityBadge" class="mobile-visibility-badge badge-good">First 40 Characters Visible</span>
+            </div>
+            <p class="mobile-preview-desc">Over 65% of Etsy shoppers browse on mobile. Etsy truncates listing titles after ~38–42 characters in grid search results.</p>
+            <div class="mobile-listing-mockup">
+              <div class="mockup-img-placeholder">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Listing Photo</span>
+              </div>
+              <div class="mockup-details">
+                <div class="mockup-shop-name">YourShopName &bull; Ad</div>
+                <div id="mockupTitleDisplay" class="mockup-title">
+                  <span class="visible-part">Handmade Ceramic Coffee Mug...</span>
+                  <span class="truncated-part">... [cut off on mobile search]</span>
+                </div>
+                <div class="mockup-rating">&#9733;&#9733;&#9733;&#9733;&#9733; (142) &bull; Free Shipping</div>
+                <div class="mockup-price">$28.00</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Structure & Content Checks -->
           <div class="checks-group">
             <h3 class="checks-group-title">Structure &amp; Content</h3>
@@ -218,12 +254,64 @@
             <ul id="technicalChecks" class="checks-list"></ul>
           </div>
 
-          <!-- Suggested Improved Title Card -->
+          <!-- NEW: 3 Formula Rewrite Variations Card -->
           <div id="titleSuggestionCard" class="title-suggestion-card" style="display: none;">
-            <h3 class="suggestion-heading">Suggested Improved Title</h3>
-            <div id="suggestedTitle" class="suggested-title-text"></div>
-            <p class="suggestion-disclaimer">Review and personalise this suggestion before using it — you know your product best.</p>
-            <button type="button" class="btn btn-sm btn-outline-terracotta" id="copySuggestedTitleBtn">Copy Suggestion</button>
+            <div class="suggestion-header-flex">
+              <div>
+                <h3 class="suggestion-heading">Suggested Title Variations (3 Tested Formulas)</h3>
+                <p class="suggestion-disclaimer">Choose the formula that best fits your target buyer or test different variations across listings.</p>
+              </div>
+            </div>
+
+            <!-- Formula 1 -->
+            <div class="formula-card">
+              <div class="formula-header">
+                <span class="formula-badge badge-formula-1">Formula 1: Direct Search First</span>
+                <span class="formula-hint">Front-loads primary keyword for maximum mobile click-through</span>
+              </div>
+              <div id="suggestedTitleA" class="suggested-title-text"></div>
+              <button type="button" class="btn btn-sm btn-outline-terracotta btn-copy-formula" id="copyFormulaABtn" data-target="suggestedTitleA">
+                Copy Formula 1
+              </button>
+            </div>
+
+            <!-- Formula 2 -->
+            <div class="formula-card">
+              <div class="formula-header">
+                <span class="formula-badge badge-formula-2">Formula 2: Gift &amp; Shopper Intent</span>
+                <span class="formula-hint">Targets high-converting gift shoppers and holiday buyers</span>
+              </div>
+              <div id="suggestedTitleB" class="suggested-title-text"></div>
+              <button type="button" class="btn btn-sm btn-outline-terracotta btn-copy-formula" id="copyFormulaBBtn" data-target="suggestedTitleB">
+                Copy Formula 2
+              </button>
+            </div>
+
+            <!-- Formula 3 -->
+            <div class="formula-card">
+              <div class="formula-header">
+                <span class="formula-badge badge-formula-3">Formula 3: Artisan &amp; Spec Focus</span>
+                <span class="formula-hint">Highlights craftsmanship, specific dimensions, and materials</span>
+              </div>
+              <div id="suggestedTitleC" class="suggested-title-text"></div>
+              <button type="button" class="btn btn-sm btn-outline-terracotta btn-copy-formula" id="copyFormulaCBtn" data-target="suggestedTitleC">
+                Copy Formula 3
+              </button>
+            </div>
+
+            <!-- Legacy container kept hidden for backward compatibility -->
+            <div id="suggestedTitle" style="display: none;"></div>
+            <button id="copySuggestedTitleBtn" style="display: none;"></button>
+          </div>
+
+          <!-- NEW: Cross-Tool Action Button -->
+          <div class="cross-tool-action-box">
+            <button type="button" id="sendToTagGenBtn" class="btn btn-primary btn-send-tags">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+              </svg>
+              <span>Generate 13 Matching Tags for this Title &rarr;</span>
+            </button>
           </div>
 
           <!-- Excellent score congratulation (shown only when score >= 80) -->
