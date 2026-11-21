@@ -110,8 +110,44 @@ function initTagGenerator() {
 
   if (!listingInput || !generateBtn) return;
 
-  // Active tags in memory: array of { text, expanded }
+  // Active tags in memory: array of { text, expanded, intent }
   let currentTags = [];
+  let alternateTags = [];
+
+  // Niche quick starter presets
+  const nichePresets = {
+    jewelry: "Dainty 14K Gold Plated Stacking Ring - Minimalist Waterproof Band for Women - Elegant Promise Ring, Stacking Band, Gift for Her, Anniversary Jewelry",
+    digital: "2026 That Girl Digital Life Planner - GoodNotes & Notability iPad Planner with Hyperlinks - Weekly Daily Schedule, Fitness, Budget, Habit Tracker PDF",
+    stickers: "Cute Holographic Vinyl Sticker Pack - Waterproof Laptop & Water Bottle Decals - Aesthetic Kawaii Planner Stickers, Die Cut Decal Gift for Teens",
+    crochet: "Handmade Chunky Crochet Blanket - Cozy Soft Chenille Throw Blanket for Sofa - Neutral Warm Knit Blanket, Baby Shower Gift, Handmade Nursery Decor",
+    candles: "Hand Poured Soy Wax Scented Candle - Clean Burning French Vanilla Amber Candle in Amber Glass Jar - Aromatherapy Candle, Housewarming Gift",
+    "wall-art": "Vintage Botanical Wildflower Art Prints - Set of 3 Neutral Cottagecore Floral Posters - Minimalist Farmhouse Wall Decor, Living Room Gallery Wall Art",
+    "t-shirts": "Comfort Colors Retro Graphic T-Shirt - Oversized Vintage Wildflower Botanical Tee - Aesthetic Cottagecore Shirt, Unisex Streetwear Tee, Gift for Her",
+    wedding: "Personalized Wedding Welcome Sign - Elegant Acrylic Modern Minimalist Ceremony Decor - Custom Bride and Groom Name Sign, Rustic Wedding Decor"
+  };
+
+  // Wire niche quick pills
+  document.querySelectorAll('.niche-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const niche = pill.getAttribute('data-niche');
+      if (nichePresets[niche]) {
+        listingInput.value = nichePresets[niche];
+        listingInput.dispatchEvent(new Event('input'));
+        generateTags();
+        showToast(`Loaded ${pill.textContent} preset and generating tags!`);
+      }
+    });
+  });
+
+  // Check URL query param or sessionStorage from Title Checker cross-tool transfer
+  const urlParams = new URLSearchParams(window.location.search);
+  const transferredTitle = urlParams.get('title') || sessionStorage.getItem('etsy_transfer_title');
+  if (transferredTitle) {
+    sessionStorage.removeItem('etsy_transfer_title');
+    listingInput.value = transferredTitle;
+    listingInput.dispatchEvent(new Event('input'));
+    setTimeout(generateTags, 350);
+  }
 
   // Update live character/word counters
   listingInput.addEventListener('input', () => {
@@ -189,8 +225,10 @@ Features:
         ...diversityCandidates
       ]);
 
-      // Step 5: Select top 13 tags using concept clustering & category balance
-      currentTags = selectTopDiverseTags(allCandidates, text);
+      // Step 5: Select top 13 tags and populate alternate swap pool
+      const selectionResult = selectTopDiverseTagsWithAlternates(allCandidates, text);
+      currentTags = selectionResult.topTags;
+      alternateTags = selectionResult.alternates;
 
     } catch (err) {
       console.error('Tag generation error:', err);
@@ -219,7 +257,7 @@ Features:
     if (currentTags.length === 0) {
       tagsWrapper.innerHTML = `<p style="color: var(--text-light); font-style: italic; width: 100%;">No tags yet. Generate from a listing or add one below.</p>`;
     } else {
-      currentTags.forEach(({ text, expanded }, index) => {
+      currentTags.forEach(({ text, expanded, intent }, index) => {
         const warning = checkTrademarkRisk(text);
 
         const chip = document.createElement('div');
@@ -232,8 +270,20 @@ Features:
           warningLabelHTML = `<span class="tag-chip-warn-label">⚠ trademark risk</span>`;
         }
 
+        // Intent badge
+        let intentLabel = 'High Search';
+        let intentClass = 'intent-high';
+        if (intent === 'long' || text.split(' ').length >= 3) {
+          intentLabel = 'Long-Tail';
+          intentClass = 'intent-long';
+        } else if (intent === 'gift' || /gift|present|for her|for him|holiday|birthday|wedding/i.test(text)) {
+          intentLabel = 'Gift Intent';
+          intentClass = 'intent-gift';
+        }
+
         chip.innerHTML = `
           <span>${escapeHtml(text)}</span>
+          <span class="tag-intent-badge ${intentClass}">${intentLabel}</span>
           ${warningLabelHTML}
           <span class="tag-chip-chars">${text.length}/20</span>
           <button type="button" class="tag-chip-remove" aria-label="Remove tag ${escapeHtml(text)}" data-index="${index}">
@@ -250,13 +300,57 @@ Features:
     tagsWrapper.querySelectorAll('.tag-chip-remove').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const idx = parseInt(e.currentTarget.getAttribute('data-index'), 10);
-        currentTags.splice(idx, 1);
+        const removed = currentTags.splice(idx, 1)[0];
+        if (removed) alternateTags.unshift(removed);
         renderTags();
       });
     });
 
+    renderAlternateTags();
     updateTagCountBadge();
     renderBudgetWidget();
+  }
+
+  // Render Alternate Swappable Tags
+  function renderAlternateTags() {
+    const altSection = document.getElementById('alternateTagsSection');
+    const altWrapper = document.getElementById('alternateChipsWrapper');
+    if (!altSection || !altWrapper) return;
+
+    if (!alternateTags || alternateTags.length === 0 || currentTags.length === 0) {
+      altSection.style.display = 'none';
+      return;
+    }
+
+    altSection.style.display = 'block';
+    altWrapper.innerHTML = '';
+
+    alternateTags.slice(0, 8).forEach((alt, altIdx) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'alt-tag-chip';
+      chip.innerHTML = `
+        <span>+ ${escapeHtml(alt.text)}</span>
+        <span class="alt-swap-icon">Swap In</span>
+      `;
+      chip.addEventListener('click', () => {
+        // Swap alternate tag into currentTags
+        if (currentTags.length >= 13) {
+          // Replace last tag
+          const replaced = currentTags.pop();
+          currentTags.push(alt);
+          alternateTags.splice(altIdx, 1);
+          if (replaced) alternateTags.push(replaced);
+          showToast(`Swapped "${alt.text}" into active tags!`);
+        } else {
+          currentTags.push(alt);
+          alternateTags.splice(altIdx, 1);
+          showToast(`Added "${alt.text}" to tags!`);
+        }
+        renderTags();
+      });
+      altWrapper.appendChild(chip);
+    });
   }
 
   function updateTagCountBadge() {
@@ -749,7 +843,76 @@ function poolAndRankCandidates(allCandidates) {
   return Array.from(uniqueMap.values()).sort((a, b) => b.score - a.score);
 }
 
+function selectTopDiverseTagsWithAlternates(rankedCandidates, rawText) {
+  const selected = [];
+  const alternates = [];
+  const categoryCounts = { descriptor: 0, occasion: 0, recipient: 0, useCase: 0 };
+  const MAX_PER_CAT    = { descriptor: 6, occasion: 3, recipient: 2, useCase: 3 };
+  const anchorUsage = new Map();
+
+  function canUseAnchor(c, maxAllowed = 1) {
+    if (!c.anchorWord) return true;
+    const count = anchorUsage.get(c.anchorWord) || 0;
+    return count < maxAllowed;
+  }
+
+  function recordAnchor(c) {
+    if (c.anchorWord) {
+      anchorUsage.set(c.anchorWord, (anchorUsage.get(c.anchorWord) || 0) + 1);
+    }
+  }
+
+  // Pass 1: Primary diverse candidates
+  for (const c of rankedCandidates) {
+    const cat = c.category || 'descriptor';
+    if ((categoryCounts[cat] || 0) >= (MAX_PER_CAT[cat] || 3)) {
+      if (!alternates.some(a => a.text === c.text)) alternates.push({ text: c.text, expanded: c.expanded, intent: cat });
+      continue;
+    }
+    if (!canUseAnchor(c, 1)) {
+      if (!alternates.some(a => a.text === c.text)) alternates.push({ text: c.text, expanded: c.expanded, intent: cat });
+      continue;
+    }
+
+    if (!sharesCoreConcept(c.text, selected)) {
+      if (selected.length < 13) {
+        selected.push({ text: c.text, expanded: c.expanded, anchorWord: c.anchorWord, intent: cat });
+        recordAnchor(c);
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      } else {
+        if (!alternates.some(a => a.text === c.text)) alternates.push({ text: c.text, expanded: c.expanded, intent: cat });
+      }
+    }
+  }
+
+  // Pass 2: Fill remaining slots if needed
+  if (selected.length < 13) {
+    for (const c of rankedCandidates) {
+      if (selected.length >= 13) break;
+      if (selected.some(s => s.text === c.text)) continue;
+      if (!sharesCoreConcept(c.text, selected)) {
+        selected.push({ text: c.text, expanded: c.expanded, anchorWord: c.anchorWord, intent: c.category || 'descriptor' });
+        recordAnchor(c);
+      }
+    }
+  }
+
+  // Collect leftover high-scoring candidates for the alternate pool
+  for (const c of rankedCandidates) {
+    if (alternates.length >= 12) break;
+    if (!selected.some(s => s.text === c.text) && !alternates.some(a => a.text === c.text)) {
+      alternates.push({ text: c.text, expanded: c.expanded, intent: c.category || 'descriptor' });
+    }
+  }
+
+  return { topTags: selected, alternates: alternates };
+}
+
 function selectTopDiverseTags(rankedCandidates, rawText) {
+  return selectTopDiverseTagsWithAlternates(rankedCandidates, rawText).topTags;
+}
+
+function selectTopDiverseTags_legacy(rankedCandidates, rawText) {
   const selected = [];
   const categoryCounts = { descriptor: 0, occasion: 0, recipient: 0, useCase: 0 };
   const MAX_PER_CAT    = { descriptor: 6, occasion: 3, recipient: 2, useCase: 3 };
@@ -960,6 +1123,39 @@ function initTitleChecker() {
       }).catch(() => {
         showToast('Copied to clipboard');
       });
+    });
+  }
+
+  // Wire Formula 1, 2, 3 copy buttons
+  document.querySelectorAll('.btn-copy-formula').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      const targetElem = document.getElementById(targetId);
+      if (targetElem) {
+        const textToCopy = targetElem.textContent.trim();
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          showToast(`Copied ${btn.textContent.trim()}!`);
+          const original = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = original; }, 1800);
+        }).catch(() => {
+          showToast('Failed to copy. Please select manually.');
+        });
+      }
+    });
+  });
+
+  // Cross-Tool Action: Send to Tag Generator
+  const sendToTagGenBtn = document.getElementById('sendToTagGenBtn');
+  if (sendToTagGenBtn) {
+    sendToTagGenBtn.addEventListener('click', () => {
+      const titleVal = titleInput.value.trim();
+      if (titleVal) {
+        sessionStorage.setItem('etsy_transfer_title', titleVal);
+        window.location.href = '/tag-generator/?title=' + encodeURIComponent(titleVal);
+      } else {
+        window.location.href = '/tag-generator/';
+      }
     });
   }
 
@@ -1457,17 +1653,52 @@ function initTitleChecker() {
       if (scoreBlurb) scoreBlurb.textContent = 'This title has multiple issues that limit visibility or click-throughs. Review the failed checks below and try the suggested title.';
     }
 
-    // Auto-Suggested Improved Title
+    // NEW: Render Mobile SERP Truncation Preview
+    const mockupEl = document.getElementById('mockupTitleDisplay');
+    const mobileBadge = document.getElementById('mobileVisibilityBadge');
+    if (mockupEl) {
+      const cutoffIndex = 40;
+      let visiblePart = rawTitle;
+      let truncatedPart = "";
+      if (rawTitle.length > cutoffIndex) {
+        visiblePart = rawTitle.slice(0, cutoffIndex);
+        truncatedPart = rawTitle.slice(cutoffIndex);
+      }
+      mockupEl.innerHTML = `
+        <span class="visible-part">${escapeHtml(visiblePart)}</span>
+        ${truncatedPart ? `<span class="truncated-part">${escapeHtml(truncatedPart)}</span>` : ''}
+      `;
+    }
+    if (mobileBadge) {
+      if (rawTitle.length <= 42) {
+        mobileBadge.textContent = "100% Title Visible on Mobile";
+        mobileBadge.className = "mobile-visibility-badge badge-good";
+      } else if (earliestNounPos >= 0 && earliestNounPos <= 32) {
+        mobileBadge.textContent = "Product Noun Visible Before Mobile Cut-Off";
+        mobileBadge.className = "mobile-visibility-badge badge-good";
+      } else {
+        mobileBadge.textContent = "Truncation Warning: Product Noun Cut-Off on Phones";
+        mobileBadge.className = "mobile-visibility-badge badge-warn";
+      }
+    }
+
+    // Auto-Suggested Improved Title (3 Distinct Formula Variations)
+    if (titleSuggestionCard) {
+      titleSuggestionCard.style.display = 'block';
+      const suggestions = buildImprovedTitleFormulas(rawTitle, detectedNouns, detectedMaterials, detectedStyles, detectedRecipient);
+      
+      const sA = document.getElementById('suggestedTitleA');
+      const sB = document.getElementById('suggestedTitleB');
+      const sC = document.getElementById('suggestedTitleC');
+      if (sA) sA.textContent = suggestions.formula1;
+      if (sB) sB.textContent = suggestions.formula2;
+      if (sC) sC.textContent = suggestions.formula3;
+      if (suggestedTitle) suggestedTitle.textContent = suggestions.formula1;
+    }
     if (totalPts >= 80) {
-      if (titleSuggestionCard) titleSuggestionCard.style.display = 'none';
       if (titleCongratCard) titleCongratCard.style.display = 'flex';
     } else {
       if (titleCongratCard) titleCongratCard.style.display = 'none';
-      if (titleSuggestionCard) {
-        titleSuggestionCard.style.display = 'block';
-        const suggestion = buildImprovedTitleSuggestion(rawTitle, detectedNouns, detectedMaterials, detectedStyles, detectedRecipient);
-        if (suggestedTitle) suggestedTitle.textContent = suggestion;
-      }
     }
 
     // Reveal results container
@@ -1481,7 +1712,61 @@ function initTitleChecker() {
     return str.replace(/\b[a-z]/g, c => c.toUpperCase());
   }
 
+  function buildImprovedTitleFormulas(rawTitle, nouns, materials, styles, recipient) {
+    let primaryNoun = nouns.length > 0 ? capitalizeWords(nouns[0]) : 'Item';
+    let secondaryNoun = nouns.find(n => n.toLowerCase() !== primaryNoun.toLowerCase());
+    secondaryNoun = secondaryNoun ? capitalizeWords(secondaryNoun) : '';
+
+    let primaryMat = materials.length > 0 ? capitalizeWords(materials[0]) : '';
+    let primaryStyle = styles.length > 0 ? capitalizeWords(styles[0]) : 'Handmade';
+    let primaryRecipient = recipient ? capitalizeWords(recipient) : 'Gift for Her';
+
+    const sizeMatch = rawTitle.match(/\b\d+(\.\d+)?\s*(oz|inch|inches|cm|mm|ml|x\d+)\b/i) || 
+                      rawTitle.match(/\b(small|medium|large|set of \d+)\b/i);
+    const sizeSnippet = sizeMatch ? sizeMatch[0].toUpperCase() : '';
+
+    // Formula 1: Direct Search First (Maximum Mobile Click-Through)
+    // [Style] [Material] [Noun] - [Secondary Phrase], [Gift Angle]
+    const f1Parts = [];
+    if (primaryMat && primaryStyle) f1Parts.push(`${primaryStyle} ${primaryMat} ${primaryNoun}`);
+    else if (primaryMat) f1Parts.push(`Handmade ${primaryMat} ${primaryNoun}`);
+    else f1Parts.push(`${primaryStyle} ${primaryNoun}`);
+
+    if (secondaryNoun) f1Parts.push(`Artisan ${secondaryNoun}`);
+    else f1Parts.push(`Unique Aesthetic ${primaryNoun}`);
+
+    f1Parts.push(primaryRecipient);
+    if (sizeSnippet) f1Parts.push(sizeSnippet);
+    let formula1 = f1Parts.join(', ');
+    if (formula1.length > 140) formula1 = formula1.slice(0, 137) + '...';
+
+    // Formula 2: Gift & Shopper Intent First
+    // [Occasion/Recipient Gift] - [Style] [Material] [Noun], [Feature]
+    const f2Parts = [];
+    f2Parts.push(`Cozy ${primaryRecipient} - ${primaryStyle} ${primaryMat ? primaryMat + ' ' : ''}${primaryNoun}`);
+    f2Parts.push(secondaryNoun ? `Handcrafted ${secondaryNoun}` : 'Artisan Home Decor');
+    if (sizeSnippet) f2Parts.push(sizeSnippet);
+    let formula2 = f2Parts.join(', ');
+    if (formula2.length > 140) formula2 = formula2.slice(0, 137) + '...';
+
+    // Formula 3: Artisan & Specification Focus
+    // Handmade [Material] [Noun] - [Style] [Specs/Size], [Gift]
+    const f3Parts = [];
+    f3Parts.push(`Handmade ${primaryMat ? primaryMat + ' ' : ''}${primaryNoun}${sizeSnippet ? ' ' + sizeSnippet : ''}`);
+    f3Parts.push(`${primaryStyle} Craftsmanship`);
+    f3Parts.push(`Personalized ${primaryRecipient}`);
+    let formula3 = f3Parts.join(', ');
+    if (formula3.length > 140) formula3 = formula3.slice(0, 137) + '...';
+
+    return { formula1, formula2, formula3 };
+  }
+
   function buildImprovedTitleSuggestion(rawTitle, nouns, materials, styles, recipient) {
+    const f = buildImprovedTitleFormulas(rawTitle, nouns, materials, styles, recipient);
+    return f.formula1;
+  }
+
+  function buildImprovedTitleSuggestion_legacy(rawTitle, nouns, materials, styles, recipient) {
     // Choose primary product noun
     let primaryNoun = nouns.length > 0 ? nouns[0] : 'Item';
 
